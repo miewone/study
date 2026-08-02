@@ -10,6 +10,7 @@ Cloudflare Pages로 배포하는 개인 학습 페이지 모음입니다. 루트
 ├── pages.json          # 공개할 페이지의 메타데이터
 ├── README.md           # 관리 및 배포 안내
 └── ontology/
+    ├── ONTOLOGY_OBJECT_DATA_BINDING_AND_QUERY.html
     └── ONTOLOGY_SIX_ELEMENTS_EXPLAINED.html
 ```
 

@@ -7,6 +7,14 @@
       "tags": ["온톨로지", "데이터 모델링", "Palantir"],
       "path": "./ontology/ONTOLOGY_SIX_ELEMENTS_EXPLAINED.html",
       "updatedAt": "2026-08-02"
+    },
+    {
+      "title": "Object는 논리적인데 데이터는 어디서 오는가",
+      "description": "Object Type과 실제 DW·DM을 연결하는 Mapping Registry, Property 값의 형태, Runtime 조회 흐름을 설명합니다.",
+      "category": "Ontology",
+      "tags": ["온톨로지", "데이터 매핑", "런타임 조회"],
+      "path": "./ontology/ONTOLOGY_OBJECT_DATA_BINDING_AND_QUERY.html",
+      "updatedAt": "2026-08-03"
     }
   ]
 }

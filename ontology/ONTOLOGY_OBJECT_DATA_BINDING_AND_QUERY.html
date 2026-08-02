@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Ontology Object Type, physical data mapping, backing strategy, Property value resolution, runtime query flow explanation">
+  <title>Object는 논리적인데 데이터는 어디서 오는가</title>
+  <style>
+    :root {
+      --navy: #173f5f;
+      --navy-deep: #102f47;
+      --teal: #147d73;
+      --teal-soft: #e5f3ef;
+      --blue-soft: #eaf1f7;
+      --yellow: #b88716;
+      --yellow-soft: #fff6d8;
+      --orange: #c56632;
+      --orange-soft: #fff0e6;
+      --red: #a8473d;
+      --red-soft: #fbe9e7;
+      --green: #2d7c59;
+      --green-soft: #e7f3ec;
+      --ink: #202b34;
+      --muted: #5f6e78;
+      --line: #d7d9d6;
+      --paper: #f6f2e9;
+      --surface: rgba(255, 255, 255, 0.82);
+      --surface-strong: #fff;
+      --shadow: 0 16px 42px rgba(22, 52, 70, 0.11);
+      --radius: 18px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 92% 4%, rgba(20, 125, 115, 0.13), transparent 25rem),
+        linear-gradient(180deg, #f9f6ef 0%, var(--paper) 100%);
+      font-family: var(--sans);
+      line-height: 1.72;
+    }
+
+    a {
+      color: var(--teal);
+      text-underline-offset: 0.18em;
+    }
+
+    code {
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.35rem;
+      color: #164f66;
+      background: #e9f1f4;
+      font-family: var(--mono);
+      font-size: 0.9em;
+      word-break: break-word;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: -5rem;
+      left: 1rem;
+      z-index: 100;
+      padding: 0.7rem 1rem;
+      color: white;
+      background: var(--navy);
+    }
+
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(4rem, 8vw, 7.5rem) 1.5rem 4.5rem;
+      color: white;
+      background: linear-gradient(120deg, var(--navy-deep), #17536a 55%, var(--teal));
+    }
+
+    .hero::after {
+      position: absolute;
+      right: -9rem;
+      bottom: -14rem;
+      width: 40rem;
+      height: 40rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 5rem rgba(255, 255, 255, 0.025),
+        0 0 0 10rem rgba(255, 255, 255, 0.018);
+      content: "";
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      width: min(1120px, 100%);
+      margin: 0 auto;
+    }
+
+    .eyebrow,
+    .section-kicker {
+      margin: 0 0 0.65rem;
+      color: #91ded2;
+      font-size: 0.77rem;
+      font-weight: 850;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(2.7rem, 6vw, 5.7rem);
+      line-height: 1.02;
+      letter-spacing: -0.055em;
+    }
+
+    .lead {
+      max-width: 790px;
+      margin: 1.5rem 0 0;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: clamp(1rem, 2vw, 1.28rem);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1.7rem;
+    }
+
+    .pill,
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .pill {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: white;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 235px minmax(0, 1fr);
+      gap: 2rem;
+      width: min(1240px, calc(100% - 2rem));
+      margin: 2rem auto 5rem;
+    }
+
+    .side-nav {
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      padding: 1.15rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: var(--shadow);
+    }
+
+    .side-nav strong {
+      display: block;
+      margin-bottom: 0.7rem;
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .side-nav a {
+      display: block;
+      padding: 0.42rem 0.5rem;
+      border-radius: 0.5rem;
+      color: var(--ink);
+      font-size: 0.82rem;
+      text-decoration: none;
+    }
+
+    .side-nav a:hover,
+    .side-nav a:focus {
+      color: var(--navy);
+      background: var(--blue-soft);
+    }
+
+    main {
+      min-width: 0;
+    }
+
+    section {
+      margin-bottom: 2rem;
+      padding: clamp(1.35rem, 3vw, 2.4rem);
+      border: 1px solid rgba(215, 217, 214, 0.92);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: 0 8px 30px rgba(22, 52, 70, 0.06);
+      scroll-margin-top: 1rem;
+    }
+
+    .section-kicker {
+      color: var(--teal);
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      color: var(--navy);
+      font-size: clamp(1.65rem, 3vw, 2.45rem);
+      line-height: 1.18;
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      margin: 1.7rem 0 0.65rem;
+      color: var(--navy);
+      font-size: 1.08rem;
+    }
+
+    p {
+      margin: 0.75rem 0;
+    }
+
+    .summary,
+    .callout {
+      padding: 1.3rem 1.45rem;
+      border: 1px solid #b9d9d3;
+      border-left: 5px solid var(--teal);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      background: var(--teal-soft);
+    }
+
+    .summary strong:first-child,
+    .callout strong:first-child {
+      color: var(--teal);
+    }
+
+    .callout.warning {
+      border-color: #edc9af;
+      border-left-color: var(--orange);
+      background: var(--orange-soft);
+    }
+
+    .callout.warning strong:first-child {
+      color: #9d4e26;
+    }
+
+    .callout.blocked {
+      border-color: #e2b5b0;
+      border-left-color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .callout.blocked strong:first-child {
+      color: var(--red);
+    }
+
+    .status.confirmed {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .status.provisional {
+      color: #8a6510;
+      background: var(--yellow-soft);
+    }
+
+    .status.blocked {
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .status.missing {
+      color: #5a5964;
+      background: #eceaf0;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: stretch;
+      gap: 0.65rem;
+      margin: 1.4rem 0;
+    }
+
+    .lane,
+    .card {
+      padding: 1.2rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-strong);
+    }
+
+    .lane h3,
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .lane:nth-of-type(1) {
+      border-top: 5px solid #34729a;
+      background: var(--blue-soft);
+    }
+
+    .lane:nth-of-type(2) {
+      border-top: 5px solid var(--teal);
+      background: var(--teal-soft);
+    }
+
+    .lane:nth-of-type(3) {
+      border-top: 5px solid var(--yellow);
+      background: var(--yellow-soft);
+    }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--orange);
+      font-size: 1.6rem;
+      font-weight: 900;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin: 1.2rem 0;
+    }
+
+    .card-grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      border-top: 5px solid var(--navy);
+      box-shadow: 0 8px 22px rgba(22, 52, 70, 0.06);
+    }
+
+    .card.teal {
+      border-top-color: var(--teal);
+    }
+
+    .card.yellow {
+      border-top-color: var(--yellow);
+    }
+
+    .card.orange {
+      border-top-color: var(--orange);
+    }
+
+    .table-wrap {
+      margin: 1.2rem 0;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th,
+    td {
+      padding: 0.78rem 0.85rem;
+      border-bottom: 1px solid #e8e3da;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--navy);
+      background: #edf3f5;
+      font-size: 0.77rem;
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr:hover td {
+      background: #fffaf2;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(135px, 1fr));
+      gap: 0.58rem;
+      margin: 1.35rem 0;
+      padding: 0.9rem;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+    }
+
+    .flow-step {
+      position: relative;
+      min-width: 135px;
+      padding: 0.9rem 0.72rem;
+      border-radius: 13px;
+      background: var(--blue-soft);
+      text-align: center;
+    }
+
+    .flow-step:nth-child(3),
+    .flow-step:nth-child(4) {
+      background: var(--teal-soft);
+    }
+
+    .flow-step:nth-child(5) {
+      background: var(--yellow-soft);
+    }
+
+    .flow-step:nth-child(6) {
+      background: var(--orange-soft);
+    }
+
+    .flow-step:not(:last-child)::after {
+      position: absolute;
+      top: 50%;
+      right: -0.48rem;
+      z-index: 2;
+      color: var(--muted);
+      content: "→";
+      font-weight: 900;
+      transform: translateY(-50%);
+    }
+
+    .flow-step b {
+      display: block;
+      color: var(--navy);
+      font-size: 0.8rem;
+    }
+
+    .flow-step span {
+      display: block;
+      margin-top: 0.38rem;
+      color: var(--muted);
+      font-size: 0.7rem;
+      line-height: 1.45;
+    }
+
+    .code-block {
+      margin: 1rem 0;
+      padding: 1.15rem 1.25rem;
+      overflow-x: auto;
+      border: 1px solid #294c61;
+      border-radius: 15px;
+      color: #deedf4;
+      background: #142f42;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.62;
+      white-space: pre;
+    }
+
+    .code-block .key {
+      color: #75d6c7;
+    }
+
+    .code-block .value {
+      color: #ffd18d;
+    }
+
+    .code-block .comment {
+      color: #8ea9b8;
+    }
+
+    .equation {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 0.7rem;
+      margin: 1.2rem 0;
+      padding: 1rem;
+      border: 1px dashed #adc2cd;
+      border-radius: var(--radius);
+      background: #fbfdfe;
+      text-align: center;
+    }
+
+    .equation > div:not(.operator) {
+      padding: 0.8rem;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 4px 14px rgba(22, 52, 70, 0.06);
+    }
+
+    .operator {
+      color: var(--orange);
+      font-size: 1.3rem;
+      font-weight: 900;
+    }
+
+    .reason-list {
+      display: grid;
+      gap: 0.65rem;
+      margin: 1rem 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .reason-list li {
+      position: relative;
+      margin: 0;
+      padding: 0.72rem 0.85rem 0.72rem 2.45rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .reason-list li::before {
+      position: absolute;
+      top: 0.72rem;
+      left: 0.82rem;
+      display: grid;
+      place-items: center;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      color: white;
+      background: var(--teal);
+      content: "✓";
+      font-size: 0.68rem;
+      font-weight: 900;
+    }
+
+    .source-list li + li {
+      margin-top: 0.48rem;
+    }
+
+    .footer {
+      padding: 2.2rem 1rem 3rem;
+      color: rgba(255, 255, 255, 0.82);
+      background: var(--navy-deep);
+      text-align: center;
+    }
+
+    .footer p {
+      margin: 0.28rem;
+    }
+
+    .footer a {
+      color: #91ded2;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .side-nav {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .side-nav strong {
+        width: 100%;
+      }
+
+      .side-nav a {
+        border: 1px solid var(--line);
+      }
+
+      .card-grid.three {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .layout {
+        width: min(100% - 1rem, 1240px);
+      }
+
+      section {
+        border-radius: 18px;
+      }
+
+      .architecture,
+      .equation {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow,
+      .operator {
+        transform: rotate(90deg);
+      }
+
+      .card-grid,
+      .card-grid.three {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .hero {
+        padding: 2rem;
+        color: var(--ink);
+        background: white;
+        border-bottom: 4px solid var(--navy);
+      }
+
+      .lead,
+      .eyebrow {
+        color: var(--ink);
+      }
+
+      .pill {
+        color: var(--ink);
+        border-color: var(--line);
+      }
+
+      .layout {
+        display: block;
+        width: 100%;
+      }
+
+      .side-nav {
+        display: none;
+      }
+
+      section {
+        break-inside: avoid-page;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Ontology backing &amp; runtime query · v0.3</p>
+      <h1>Object는 논리적인데,<br>데이터는 어디서 오는가</h1>
+      <p class="lead">
+        Object Type의 업무 계약과 실제 DW·DM 저장 위치를 연결하는 Mapping Registry,
+        Property 값의 저장·계산 방식, Function 실행부터 typed Object 반환까지의 조회 흐름을 설명한다.
+      </p>
+      <div class="hero-meta" aria-label="문서 메타데이터">
+        <span class="pill">기준일 2026-08-03</span>
+        <span class="pill">Standalone HTML · no dependency</span>
+        <span class="pill">Semantic contract ≠ physical locator</span>
+        <span class="pill">Production activation 미주장</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="side-nav" aria-label="문서 목차">
+      <strong>Contents</strong>
+      <a href="#answer">한 문장 답</a>
+      <a href="#three-layers">세 계층의 책임</a>
+      <a href="#registry">Registry가 위치를 아는 방법</a>
+      <a href="#backing">Object 저장 방식</a>
+      <a href="#property-value">Property 값의 세 형태</a>
+      <a href="#example">Paid Sell-out mapping 예시</a>
+      <a href="#query-flow">실제 데이터 조회 흐름</a>
+      <a href="#discovery">Object 탐색과 Measure 조회</a>
+      <a href="#wide-dm">하나의 DM과 여러 Object</a>
+      <a href="#status">현재 구현 상태</a>
+      <a href="#review">객관적 검토</a>
+      <a href="#sources">근거 문서</a>
+    </nav>
+
+    <main id="main">
+      <section id="answer">
+        <p class="section-kicker">Executive answer</p>
+        <h2>Object Type은 의미를, Mapping은 위치를, Runtime은 값을 가져오는 일을 맡는다</h2>
+        <div class="summary">
+          <strong>핵심 답:</strong>
+          Object Type은 Identity·Property·Link·Function·Action의 업무적 모양을 정의한다.
+          어느 DB·테이블·컬럼에서 값을 읽는지는 Object Type 자체가 아니라 versioned Mapping 계층이 정의한다.
+          실제 값은 외부 DW/DM, ontology-owned master 또는 workflow store에 존재하며,
+          Runtime adapter가 Mapping을 따라 읽고 typed Object 형태로 반환한다.
+        </div>
+
+        <div class="equation" aria-label="Object 조회를 구성하는 세 요소">
+          <div><strong>Semantic Contract</strong><br><small>무엇인가</small></div>
+          <div class="operator">+</div>
+          <div><strong>Physical Mapping</strong><br><small>어디서·어떻게 읽는가</small></div>
+          <div class="operator">+</div>
+          <div><strong>Runtime Adapter</strong><br><small>검증하고 실행한다</small></div>
+        </div>
+
+        <div class="callout warning">
+          <strong>중요한 구분:</strong>
+          Property 정의가 존재한다는 사실만으로 그 값이 별도 컬럼에 저장됐거나 현재 조회 가능하다는 뜻은 아니다.
+          조회 가능성은 Property Mapping, source readiness, 권한, Grain, Function plan과 activation 상태까지 모두 충족해야 한다.
+        </div>
+      </section>
+
+      <section id="three-layers">
+        <p class="section-kicker">Separation of concerns</p>
+        <h2>업무 의미·물리 연결·실제 저장소를 분리한다</h2>
+        <div class="architecture" aria-label="온톨로지 의미와 실제 데이터 저장소를 연결하는 세 계층">
+          <article class="lane">
+            <h3>1. Semantic layer</h3>
+            <p><code>object_type</code><br><code>property_definition</code><br><code>link_type</code><br><code>function_definition</code></p>
+            <p><strong>답하는 질문:</strong> 무엇이며 어떤 규칙을 가지는가?</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="lane">
+            <h3>2. Mapping layer</h3>
+            <p><code>object_type_mapping</code><br><code>property_mapping</code><br><code>link_mapping</code><br><code>function_logical_plan</code></p>
+            <p><strong>답하는 질문:</strong> 어떤 Asset·Field·Join·Plan으로 해석하는가?</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="lane">
+            <h3>3. Physical/runtime layer</h3>
+            <p><code>data_source</code><br><code>data_asset</code><br><code>data_asset_field</code><br>Runtime credential·adapter</p>
+            <p><strong>답하는 질문:</strong> 어느 엔진에서 실제 값을 읽거나 쓰는가?</p>
+          </article>
+        </div>
+
+        <h3>Object Type이 직접 아는 것과 모르는 것</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Object Type이 정의하는 것</th>
+                <th>Object Type 단독으로 정의하지 않는 것</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>업무 정의와 category</td>
+                <td>BigQuery project·dataset·table 이름</td>
+              </tr>
+              <tr>
+                <td>Object Grain과 Identity 전략</td>
+                <td>접속 credential·DSN·secret</td>
+              </tr>
+              <tr>
+                <td>허용 Property와 그 data type·role</td>
+                <td>Property가 연결될 실제 컬럼 또는 계산식</td>
+              </tr>
+              <tr>
+                <td>Link endpoint와 cardinality 의미</td>
+                <td>실제 join field와 identity crosswalk</td>
+              </tr>
+              <tr>
+                <td>사용 가능한 Function·Action의 의미</td>
+                <td>엔진별 SQL·API 호출과 runtime 권한</td>
+              </tr>
+              <tr>
+                <td><code>VIRTUAL_EXTERNAL</code> 같은 coarse backing strategy</td>
+                <td>활성 version에서 선택할 exact default mapping</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="registry">
+        <p class="section-kicker">Registry contract</p>
+        <h2>실제 데이터 위치는 versioned Registry graph가 안다</h2>
+        <p>
+          정확히는 Object Type 하나가 위치를 모두 들고 있는 것이 아니라, 같은 ontology version에 속한
+          source·asset·field·mapping row가 합쳐져 완전한 조회 계약을 만든다. Registry는 업무 데이터 자체를
+          저장하는 곳이 아니라 <em>무엇을 어디서 어떻게 읽을 수 있는지</em>를 통제하는 metadata graph다.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Registry relation</th>
+                <th>저장하는 계약</th>
+                <th>예시 역할</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>data_source</code></td>
+                <td>엔진 종류와 secret이 아닌 <code>runtime_binding_key</code></td>
+                <td>BIGQUERY, POSTGRESQL 등 trusted provider 선택</td>
+              </tr>
+              <tr>
+                <td><code>data_asset</code></td>
+                <td>TABLE·VIEW·API·FILE·QUERY와 catalog/schema/asset locator</td>
+                <td>어느 BI_EXPORT 또는 master table을 읽는지 식별</td>
+              </tr>
+              <tr>
+                <td><code>data_asset_field</code></td>
+                <td>물리 field 이름·ordinal·type·nullability</td>
+                <td>존재하지 않거나 type이 달라진 컬럼 mapping 차단</td>
+              </tr>
+              <tr>
+                <td><code>object_type_mapping</code></td>
+                <td>Object Type ↔ Asset, mapping type, access mode, filter plan</td>
+                <td>행, distinct projection, canonical join 또는 computed Object 생성</td>
+              </tr>
+              <tr>
+                <td><code>property_mapping</code></td>
+                <td>Property ↔ source field 또는 expression plan</td>
+                <td><code>impressionCount</code>를 source <code>impressions</code>에 direct mapping</td>
+              </tr>
+              <tr>
+                <td><code>link_mapping</code></td>
+                <td>Link의 from/to mapping과 resolution strategy</td>
+                <td>same-source join 또는 target identity lookup</td>
+              </tr>
+              <tr>
+                <td><code>link_mapping_component</code></td>
+                <td>순서가 있는 from/to field equality 계약</td>
+                <td>label 추측이 아닌 검증된 join component</td>
+              </tr>
+              <tr>
+                <td><code>function_logical_plan</code></td>
+                <td>Object·Property·Link 기준의 engine-neutral 실행 단계</td>
+                <td>필터·집계·projection 순서 고정</td>
+              </tr>
+              <tr>
+                <td><code>function_engine_override</code></td>
+                <td>특정 엔진의 read-only query template와 parameter schema</td>
+                <td>승인된 BigQuery/PostgreSQL 최적화 경로</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>왜 분리하는가:</strong>
+          같은 Object Type을 개발·운영 또는 국가별로 다른 Asset에 연결할 수 있고, source가 바뀌어도 업무 API를
+          유지할 수 있다. 또한 LLM과 일반 호출자에게 table·column·credential을 공개하지 않고 runtime provider만
+          물리 locator를 해석하게 할 수 있다.
+        </div>
+      </section>
+
+      <section id="backing">
+        <p class="section-kicker">Backing strategy</p>
+        <h2>Object마다 실제 값이 존재하는 위치가 다를 수 있다</h2>
+        <div class="card-grid three">
+          <article class="card teal">
+            <h3><code>VIRTUAL_EXTERNAL</code></h3>
+            <p>실제 값은 외부 DW·DM·API에 남아 있고, 조회할 때 Object 형태로 투영한다.</p>
+            <p><strong>후보:</strong> <code>PaidSelloutObservation</code>, <code>OnsiteEfficiencyObservation</code>, <code>TotalSelloutObservation</code></p>
+            <p><strong>복제:</strong> 전체 Measure를 Registry에 복제할 필요 없음</p>
+          </article>
+          <article class="card yellow">
+            <h3><code>MATERIALIZED_MASTER</code></h3>
+            <p>Canonical identity와 lifecycle을 ontology-owned master가 저장한다.</p>
+            <p><strong>후보:</strong> <code>Retailer</code>, <code>Currency</code>, reference vocabulary</p>
+            <p><strong>필수:</strong> source crosswalk·validity·dedup 계약</p>
+          </article>
+          <article class="card orange">
+            <h3><code>OPERATIONAL_OWNED</code></h3>
+            <p>상태 변경이 필요한 Object는 workflow 또는 운영 store가 소유한다.</p>
+            <p><strong>후보:</strong> <code>PerformanceInvestigation</code>, <code>MetricTargetLine</code></p>
+            <p><strong>필수:</strong> Action authorization·audit·rollback</p>
+          </article>
+        </div>
+
+        <p>
+          호출자는 backing strategy 차이를 직접 처리하지 않는다. 동일한 Object reference와 typed Property interface를
+          사용하고, Registry와 Runtime adapter가 실제 source를 선택한다.
+        </p>
+      </section>
+
+      <section id="property-value">
+        <p class="section-kicker">Property value resolution</p>
+        <h2>Property 값은 저장 컬럼·계산 결과·미연결 상태 중 하나다</h2>
+        <div class="card-grid three">
+          <article class="card teal">
+            <h3><code>DIRECT</code></h3>
+            <p>실제 source field에 저장된 값을 그대로 typed Property로 읽는다.</p>
+            <div class="code-block"><span class="key">impressionCount</span>
+  → <span class="value">source.impressions</span></div>
+            <p>Source type·nullability·Grain·lineage를 함께 검증한다.</p>
+          </article>
+          <article class="card yellow">
+            <h3><code>EXPRESSION</code></h3>
+            <p>승인된 expression plan 또는 Function이 조회 시 값을 계산한다.</p>
+            <div class="code-block"><span class="key">ctr</span>
+  → <span class="value">safeDivide(clicks, impressions)</span></div>
+            <p>별도 저장 컬럼이 없어도 되지만 formula·scale·zero 정책이 필요하다.</p>
+          </article>
+          <article class="card orange">
+            <h3><code>UNMAPPED / BLOCKED</code></h3>
+            <p>업무 개념은 정의됐지만 승인된 source field나 expression이 없다.</p>
+            <div class="code-block"><span class="key">canonicalRoas</span>
+  → <span class="value">no approved mapping</span></div>
+            <p>현재 실행·노출하지 않고 fail closed한다.</p>
+          </article>
+        </div>
+
+        <div class="summary">
+          <strong>조회 가능 조건:</strong>
+          <code>PropertyDefinition</code> + <code>ObjectTypeMapping</code> + <code>PropertyMapping</code> +
+          승인된 <code>DataAsset</code> + Runtime adapter + 권한·Grain 검증이 함께 있어야 한다.
+        </div>
+      </section>
+
+      <section id="example">
+        <p class="section-kicker">Conceptual example</p>
+        <h2>Paid Sell-out Property가 실제 DM 값으로 연결되는 모습</h2>
+        <div class="callout warning">
+          <strong>설명용 예시:</strong>
+          아래 구조는 Registry relation의 역할을 보여주는 conceptual projection이다.
+          현재 <code>PaidSelloutObservation</code>의 production Property key·source field·default mapping이
+          승인됐다는 의미가 아니다.
+        </div>
+
+        <div class="code-block"><span class="comment"># 1. 업무 계약 — 무엇인가</span>
+<span class="key">objectType</span>: <span class="value">PaidSelloutObservation</span>
+<span class="key">backingStrategy</span>: <span class="value">VIRTUAL_EXTERNAL</span>
+<span class="key">properties</span>:
+  - <span class="value">paidSelloutQuantity</span>
+  - <span class="value">paidSelloutAmount</span>
+
+<span class="comment"># 2. Object mapping — 어느 Asset에서 Object를 만드는가</span>
+<span class="key">objectTypeMapping</span>:
+  <span class="key">assetKey</span>: <span class="value">weekly_ecommerce_overview_dm</span>
+  <span class="key">mappingType</span>: <span class="value">ROW</span>
+  <span class="key">accessMode</span>: <span class="value">READ_ONLY</span>
+
+<span class="comment"># 3. Property mapping — 어느 Field 또는 Expression에서 값을 읽는가</span>
+<span class="key">propertyMappings</span>:
+  <span class="key">paidSelloutAmount</span>:
+    <span class="key">mappingKind</span>: <span class="value">DIRECT</span>
+    <span class="key">sourceFieldName</span>: <span class="value">&lt;approved-source-field&gt;</span>
+
+<span class="comment"># 4. Physical source — 실제 값의 저장 위치</span>
+<span class="key">dataSource</span>:
+  <span class="key">engineType</span>: <span class="value">BIGQUERY</span>
+  <span class="key">runtimeBindingKey</span>: <span class="value">&lt;trusted-runtime-binding&gt;</span>
+<span class="key">dataAsset</span>:
+  <span class="key">assetKind</span>: <span class="value">&lt;TABLE-or-VIEW&gt;</span>
+  <span class="key">physicalRole</span>: <span class="value">BI_EXPORT</span></div>
+
+        <div class="equation" aria-label="Paid Sell-out Property 물리 해석 경로">
+          <div><code>PaidSelloutObservation</code><br><small>업무 Object Type</small></div>
+          <div class="operator">→</div>
+          <div><code>object_type_mapping</code><br><code>property_mapping</code></div>
+          <div class="operator">→</div>
+          <div><code>data_asset</code><br><code>data_asset_field</code></div>
+        </div>
+      </section>
+
+      <section id="query-flow">
+        <p class="section-kicker">Runtime execution</p>
+        <h2>실제 데이터 조회는 여섯 단계로 진행된다</h2>
+        <p>예시 질문: “2026년 31주차 특정 Retailer의 Paid Sell-out Amount를 보여줘.”</p>
+
+        <div class="flow" aria-label="사용자 질문에서 typed Object 결과까지의 조회 흐름">
+          <div class="flow-step"><b>1. 질문·Function</b><span>허용된 업무 Function과 typed input을 선택</span></div>
+          <div class="flow-step"><b>2. Object scope</b><span>Retailer·BusinessPeriod identity와 Link를 resolve</span></div>
+          <div class="flow-step"><b>3. ACTIVE Registry</b><span>Type·Property·Link·default Mapping exact match</span></div>
+          <div class="flow-step"><b>4. Guard·Plan</b><span>권한·기간·row·scan·timeout과 logical plan 검증</span></div>
+          <div class="flow-step"><b>5. Runtime source read</b><span>Trusted adapter가 parameterized read-only query 실행</span></div>
+          <div class="flow-step"><b>6. Typed result</b><span>ObjectRef·Property·Link·lineage의 closed schema 반환</span></div>
+        </div>
+
+        <h3>Runtime이 반환하는 것은 물리 행이 아니라 typed Object projection이다</h3>
+        <div class="code-block">{
+  <span class="key">"objectType"</span>: <span class="value">"PaidSelloutObservation"</span>,
+  <span class="key">"objectRef"</span>: <span class="value">"&lt;approved-object-identity&gt;"</span>,
+  <span class="key">"properties"</span>: {
+    <span class="key">"paidSelloutAmount"</span>: <span class="value">985000000</span>
+  },
+  <span class="key">"links"</span>: {
+    <span class="key">"paidSelloutObservedForRetailer"</span>: <span class="value">"Retailer.&lt;id&gt;"</span>,
+    <span class="key">"paidSelloutObservedInPeriod"</span>: <span class="value">"BusinessPeriod.2026-W31"</span>
+  },
+  <span class="key">"lineage"</span>: {
+    <span class="key">"ontologyVersion"</span>: <span class="value">"&lt;active-version&gt;"</span>,
+    <span class="key">"mappingVersion"</span>: <span class="value">"&lt;immutable-mapping-version&gt;"</span>,
+    <span class="key">"dataSnapshot"</span>: <span class="value">"&lt;approved-snapshot&gt;"</span>
+  }
+}</div>
+
+        <ul class="reason-list">
+          <li>사용자는 table·column·SQL·credential을 입력하지 않는다.</li>
+          <li>LLM이 source field 이름이나 join을 생성하지 않는다.</li>
+          <li>결과에는 closed Property와 typed Link만 포함하고 wildcard를 금지한다.</li>
+          <li>어느 ontology version·mapping·snapshot으로 읽었는지 lineage를 보존한다.</li>
+        </ul>
+      </section>
+
+      <section id="discovery">
+        <p class="section-kicker">Discovery vs. measure read</p>
+        <h2>Object 탐색용 정보와 대량 Measure는 따로 저장할 수 있다</h2>
+        <div class="card-grid">
+          <article class="card teal">
+            <h3>Object discovery index</h3>
+            <p><strong>목적:</strong> 사용자가 선택할 Object를 빠르고 안전하게 찾는다.</p>
+            <p><strong>저장 후보:</strong> ObjectRef, Object Type, title, 주요 Link, visibility, snapshot binding.</p>
+            <p><strong>포함하지 않아도 되는 것:</strong> 모든 기간의 대량 Measure와 raw source payload.</p>
+          </article>
+          <article class="card yellow">
+            <h3>Measure Function read</h3>
+            <p><strong>목적:</strong> 선택된 Object scope에 필요한 값만 source에서 읽고 집계한다.</p>
+            <p><strong>입력:</strong> trusted ObjectRef, 기간, Metric Variant, approved Function.</p>
+            <p><strong>출력:</strong> bounded Property·Metric result와 lineage.</p>
+          </article>
+        </div>
+
+        <div class="equation" aria-label="Object 탐색과 Measure 조회 분리">
+          <div><strong>“UK의 Amazon” 탐색</strong><br><small>identity·title·Link index</small></div>
+          <div class="operator">→</div>
+          <div><strong>ResolvedObjectScope</strong><br><small>권한이 검증된 선택</small></div>
+          <div class="operator">→</div>
+          <div><strong>Paid Sell-out 조회</strong><br><small>Function이 DW/DM Measure read</small></div>
+        </div>
+      </section>
+
+      <section id="wide-dm">
+        <p class="section-kicker">One source, multiple projections</p>
+        <h2>하나의 Wide DM이 여러 Object Type을 backing할 수 있다</h2>
+        <p>
+          Object Type 분리는 물리 테이블 분리를 강제하지 않는다. 같은 BI DM 행에서 서로 다른 업무 의미의
+          Property 집합을 선택하는 typed projection을 만들 수 있다.
+        </p>
+
+        <div class="architecture" aria-label="하나의 Wide DM에서 여러 typed Observation으로 투영되는 구조">
+          <article class="lane">
+            <h3>Wide BI DM</h3>
+            <p>week · country · retailer · product · paid sellout · ROAS · total sellout</p>
+            <p><strong>Physical role:</strong> BI_EXPORT</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="lane">
+            <h3>Versioned mappings</h3>
+            <p>Object별 filter·projection·identity·Property·Link mapping을 분리한다.</p>
+            <p><strong>동일 source row 재사용 가능</strong></p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="lane">
+            <h3>Typed Objects</h3>
+            <p><code>PaidSelloutObservation</code><br><code>OnsiteEfficiencyObservation</code><br><code>TotalSelloutObservation</code></p>
+            <p><strong>업무 의미·집계 정책은 독립</strong></p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>물리 분리 판단:</strong>
+          원천 Grain, 갱신 주기, correction, source ownership, 보안, retention 또는 성능 요구가 실제로 다를 때만
+          별도 Fact/Data Product를 검토한다. Object Type 수만 보고 테이블을 나누지 않는다.
+        </div>
+      </section>
+
+      <section id="status">
+        <p class="section-kicker">Current readiness</p>
+        <h2>설계 구조가 존재하는 것과 지금 조회 가능한 것은 다르다</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>항목</th>
+                <th>현재 상태</th>
+                <th>의미</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Registry relation 설계·DDL</td>
+                <td><span class="status confirmed">DEFINED</span></td>
+                <td>Source·Asset·Object·Property·Link·Function mapping 구조가 정의됨</td>
+              </tr>
+              <tr>
+                <td>Canonical 최소 release 계약</td>
+                <td><span class="status provisional">DOCUMENTED</span></td>
+                <td>4 Object Type·12 Property·4 Link·2 Function의 read-only 계약</td>
+              </tr>
+              <tr>
+                <td>Production default physical mapping</td>
+                <td><span class="status missing">MISSING</span></td>
+                <td>12 Property·4 Link의 승인된 default mapping과 source isolation이 없음</td>
+              </tr>
+              <tr>
+                <td>Production runtime adapter</td>
+                <td><span class="status missing">MISSING</span></td>
+                <td>Function parameter binding·identifier allowlist·credential·transaction·output adapter 필요</td>
+              </tr>
+              <tr>
+                <td><code>PaidSelloutObservation</code></td>
+                <td><span class="status blocked">BLOCKED</span></td>
+                <td>Full-scope target이며 identity·Grain·Property/source mapping·Metric Variant evidence 부족</td>
+              </tr>
+              <tr>
+                <td>ROAS source/recomputation</td>
+                <td><span class="status blocked">BLOCKED</span></td>
+                <td>Exact Variant mapping·scale·Calculation Policy 미승인</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout blocked">
+          <strong>현재 결론:</strong>
+          이 페이지는 production 조회가 이미 동작한다고 주장하지 않는다.
+          특히 <code>PaidSelloutObservation.paidSelloutAmount</code>는 target architecture에서의 소유·조회 위치를
+          설명할 뿐, 현재 canonical 최소 release에서 실행 가능한 Property가 아니다.
+        </div>
+      </section>
+
+      <section id="review">
+        <p class="section-kicker">Objective review</p>
+        <h2>성능·보안·확장성 관점의 판단</h2>
+        <div class="card-grid three">
+          <article class="card teal">
+            <h3>성능</h3>
+            <p><strong>장점:</strong> Object discovery index와 Measure read를 분리하고, Function별 row·scan·timeout을 제한할 수 있다.</p>
+            <p><strong>주의:</strong> Virtual Object를 매번 복잡한 join으로 만들면 느려질 수 있으므로 반복 경로는 View·materialized projection·cache를 검토한다.</p>
+          </article>
+          <article class="card yellow">
+            <h3>보안</h3>
+            <p><strong>장점:</strong> 물리 locator와 credential을 model-visible interface에서 제거하고 approved mapping만 실행한다.</p>
+            <p><strong>주의:</strong> Registry visibility와 runtime source 권한을 실행 직전에 같은 scope로 다시 검증해야 한다.</p>
+          </article>
+          <article class="card orange">
+            <h3>확장성</h3>
+            <p><strong>장점:</strong> Source 교체나 Fact 분리 시 Object API를 유지한 채 새 immutable mapping version으로 전환할 수 있다.</p>
+            <p><strong>주의:</strong> Mapping이 늘어날수록 lineage·activation·compatibility test가 필수다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="sources">
+        <p class="section-kicker">Traceability</p>
+        <h2>근거 문서</h2>
+        <ol class="source-list">
+          <li><a href="../../sql/postgresql/registry/001_create_ontology_registry.sql"><strong>001_create_ontology_registry.sql</strong></a> — <code>data_source</code>, <code>data_asset</code>, Object·Property·Link mapping과 Function plan DDL</li>
+          <li><a href="ONTOLOGY_MODEL.md"><strong>ONTOLOGY_MODEL.md</strong></a> — Object Type, Property, Link, backing strategy와 현재 model status</li>
+          <li><a href="READ_ONLY_ACTIVATION_PROFILE.md"><strong>READ_ONLY_ACTIVATION_PROFILE.md</strong></a> — default physical mapping·runtime adapter·권한·lineage activation gate</li>
+          <li><a href="SYNTHETIC_POC_PROFILE.md"><strong>SYNTHETIC_POC_PROFILE.md</strong></a> — fixture-only direct Property mapping과 Object population 예시</li>
+          <li><a href="SYNTHETIC_POC_OBJECT_RESOLUTION.md"><strong>SYNTHETIC_POC_OBJECT_RESOLUTION.md</strong></a> — Object 탐색·선택·ResolvedObjectScope와 Function 실행의 경계</li>
+          <li><a href="../weekly_ecommerce_domain_ontology_design_v0.3.md"><strong>weekly_ecommerce_domain_ontology_design_v0.3.md</strong></a> — full-scope typed Observation과 공통 Wide DM projection 원칙</li>
+        </ol>
+        <p>
+          이 HTML은 설명용 projection이다. 이름·수치·상태가 충돌할 경우 위 정본 Markdown, SQL 계약,
+          machine-readable artifact와 실제 Registry activation evidence를 우선한다.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <p><strong>Weekly E-commerce v0.3 Ontology — Object Data Binding &amp; Query</strong></p>
+    <p>설명 문서 · 기준일 2026-08-03 · production activation을 주장하지 않음</p>
+    <p><a href="#answer">문서 처음으로</a></p>
+  </footer>
+</body>
+</html>
