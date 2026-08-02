@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="주제별로 정리한 개인 학습 페이지 모음">
+  <meta name="color-scheme" content="light">
+  <title>Study Archive</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #64717d;
+      --paper: #f5f3ed;
+      --surface: rgba(255, 255, 255, 0.82);
+      --line: rgba(23, 33, 43, 0.12);
+      --navy: #173f5f;
+      --teal: #147d73;
+      --orange: #e36b34;
+      --shadow: 0 22px 60px rgba(23, 63, 95, 0.10);
+      --sans: Inter, Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 88% 5%, rgba(227, 107, 52, 0.14), transparent 23rem),
+        radial-gradient(circle at 6% 34%, rgba(20, 125, 115, 0.12), transparent 26rem),
+        var(--paper);
+      font-family: var(--sans);
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -5rem;
+      left: 1rem;
+      z-index: 10;
+      padding: 0.65rem 0.9rem;
+      border-radius: 0.5rem;
+      color: white;
+      background: var(--navy);
+    }
+
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 5.5rem 0 3rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.7rem;
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(2.6rem, 8vw, 5.8rem);
+      line-height: 0.98;
+      letter-spacing: -0.065em;
+    }
+
+    .intro {
+      max-width: 650px;
+      margin: 1.5rem 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1.8rem 0 2.5rem;
+    }
+
+    .search {
+      position: relative;
+      flex: 1;
+    }
+
+    .search svg {
+      position: absolute;
+      top: 50%;
+      left: 1rem;
+      width: 1.1rem;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search input {
+      width: 100%;
+      padding: 0.9rem 1rem 0.9rem 2.8rem;
+      border: 1px solid var(--line);
+      border-radius: 0.85rem;
+      outline: none;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 10px 30px rgba(23, 63, 95, 0.05);
+    }
+
+    .search input:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(20, 125, 115, 0.13);
+    }
+
+    .count {
+      flex: none;
+      min-width: 5.8rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    .section {
+      margin-bottom: 3.25rem;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      letter-spacing: -0.035em;
+    }
+
+    .section-heading span {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      min-height: 210px;
+      flex-direction: column;
+      padding: 1.4rem;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 1.1rem;
+      text-decoration: none;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .card::after {
+      position: absolute;
+      right: -2rem;
+      bottom: -3.5rem;
+      width: 8rem;
+      height: 8rem;
+      border: 1.3rem solid rgba(20, 125, 115, 0.07);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .card:hover,
+    .card:focus-visible {
+      border-color: rgba(20, 125, 115, 0.42);
+      outline: none;
+      box-shadow: 0 26px 65px rgba(23, 63, 95, 0.16);
+      transform: translateY(-4px);
+    }
+
+    .tag {
+      align-self: flex-start;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      color: var(--teal);
+      background: rgba(20, 125, 115, 0.09);
+      font-size: 0.73rem;
+      font-weight: 800;
+    }
+
+    .card h3 {
+      max-width: 28rem;
+      margin: 1.05rem 0 0.6rem;
+      font-size: 1.23rem;
+      line-height: 1.35;
+      letter-spacing: -0.025em;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: auto;
+      padding-top: 1.25rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .arrow {
+      color: var(--orange);
+      font-size: 1.2rem;
+      transition: transform 180ms ease;
+    }
+
+    .card:hover .arrow {
+      transform: translateX(0.25rem);
+    }
+
+    .empty,
+    .error {
+      padding: 3rem 1.5rem;
+      border: 1px dashed var(--line);
+      border-radius: 1rem;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .error strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: #a53d35;
+    }
+
+    footer {
+      margin-top: 5rem;
+      padding: 1.5rem 0 2.5rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 560px) {
+      header {
+        padding-top: 4rem;
+      }
+
+      .toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .count {
+        min-width: 0;
+        text-align: left;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">본문으로 이동</a>
+
+  <header class="shell">
+    <p class="eyebrow">Personal Knowledge Base</p>
+    <h1>Study Archive</h1>
+    <p class="intro">배운 것을 주제별로 기록하고, 다시 찾기 쉽게 모아 둔 개인 학습 아카이브입니다.</p>
+  </header>
+
+  <main id="content" class="shell">
+    <div class="toolbar" role="search">
+      <label class="search">
+        <span class="visually-hidden">학습 페이지 검색</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m20 20-4-4"></path>
+        </svg>
+        <input id="search" type="search" placeholder="제목, 설명, 태그로 검색" autocomplete="off">
+      </label>
+      <output id="count" class="count" aria-live="polite">불러오는 중…</output>
+    </div>
+
+    <div id="catalog" aria-live="polite"></div>
+  </main>
+
+  <footer>
+    <div class="shell">Keep learning, keep building.</div>
+  </footer>
+
+  <template id="section-template">
+    <section class="section">
+      <div class="section-heading">
+        <h2></h2>
+        <span></span>
+      </div>
+      <div class="grid"></div>
+    </section>
+  </template>
+
+  <template id="card-template">
+    <a class="card">
+      <span class="tag"></span>
+      <h3></h3>
+      <p></p>
+      <span class="card-footer">
+        <time></time>
+        <span class="arrow" aria-hidden="true">→</span>
+      </span>
+    </a>
+  </template>
+
+  <script>
+    class StudyCatalog {
+      /**
+       * 학습 페이지 목록을 불러오고 검색 가능한 카드 UI로 렌더링한다.
+       * @param {object} elements 렌더링에 사용할 DOM 요소 모음
+       */
+      constructor(elements) {
+        this.elements = elements;
+        this.pages = [];
+        this.query = "";
+      }
+
+      /** pages.json을 불러오고 이벤트를 연결한다. */
+      async initialize() {
+        this.elements.search.addEventListener("input", (event) => {
+          this.query = event.target.value.trim().toLocaleLowerCase("ko-KR");
+          this.render();
+        });
+
+        try {
+          const response = await fetch("./pages.json");
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          this.pages = this.validatePages(data.pages);
+          this.render();
+        } catch (error) {
+          this.renderError(error);
+        }
+      }
+
+      /**
+       * 외부 데이터에서 렌더링에 안전한 페이지 항목만 선택한다.
+       * @param {unknown} pages 검증할 페이지 목록
+       * @returns {Array<object>} 필수 필드를 가진 페이지 목록
+       */
+      validatePages(pages) {
+        if (!Array.isArray(pages)) {
+          throw new TypeError("pages 배열이 없습니다.");
+        }
+
+        return pages.filter((page) =>
+          page
+          && typeof page.title === "string"
+          && typeof page.description === "string"
+          && typeof page.category === "string"
+          && this.isSafeRelativePath(page.path)
+          && (page.tags === undefined || (
+            Array.isArray(page.tags)
+            && page.tags.every((tag) => typeof tag === "string")
+          ))
+        );
+      }
+
+      /**
+       * 링크가 현재 사이트 내부의 상대 경로인지 확인한다.
+       * @param {unknown} path 검사할 링크 경로
+       * @returns {boolean} 안전한 내부 상대 경로 여부
+       */
+      isSafeRelativePath(path) {
+        return typeof path === "string"
+          && path.startsWith("./")
+          && !path.split("/").includes("..");
+      }
+
+      /** 현재 검색어를 기준으로 페이지 목록을 화면에 그린다. */
+      render() {
+        const filteredPages = this.pages.filter((page) => {
+          const searchable = [
+            page.title,
+            page.description,
+            page.category,
+            ...(page.tags ?? []),
+          ].join(" ").toLocaleLowerCase("ko-KR");
+
+          return searchable.includes(this.query);
+        });
+
+        const groups = Map.groupBy
+          ? Map.groupBy(filteredPages, (page) => page.category)
+          : this.groupByCategory(filteredPages);
+
+        this.elements.catalog.replaceChildren();
+        this.elements.count.textContent = `${filteredPages.length}개의 페이지`;
+
+        if (filteredPages.length === 0) {
+          const empty = document.createElement("p");
+          empty.className = "empty";
+          empty.textContent = "검색 조건에 맞는 학습 페이지가 없습니다.";
+          this.elements.catalog.append(empty);
+          return;
+        }
+
+        groups.forEach((pages, category) => {
+          this.elements.catalog.append(this.createSection(category, pages));
+        });
+      }
+
+      /**
+       * Map.groupBy를 지원하지 않는 브라우저용 그룹화 구현이다.
+       * @param {Array<object>} pages 그룹화할 페이지 목록
+       * @returns {Map<string, Array<object>>} 카테고리별 페이지 맵
+       */
+      groupByCategory(pages) {
+        return pages.reduce((groups, page) => {
+          const categoryPages = groups.get(page.category) ?? [];
+          categoryPages.push(page);
+          groups.set(page.category, categoryPages);
+          return groups;
+        }, new Map());
+      }
+
+      /**
+       * 카테고리 섹션을 생성한다.
+       * @param {string} category 카테고리 이름
+       * @param {Array<object>} pages 카테고리에 속한 페이지 목록
+       * @returns {HTMLElement} 완성된 섹션 요소
+       */
+      createSection(category, pages) {
+        const fragment = this.elements.sectionTemplate.content.cloneNode(true);
+        const section = fragment.querySelector("section");
+        const heading = fragment.querySelector("h2");
+        const count = fragment.querySelector(".section-heading span");
+        const grid = fragment.querySelector(".grid");
+
+        heading.textContent = category;
+        count.textContent = `${pages.length.toString().padStart(2, "0")} TOPICS`;
+        pages.forEach((page) => grid.append(this.createCard(page)));
+
+        return section;
+      }
+
+      /**
+       * 학습 페이지 한 개를 나타내는 링크 카드를 생성한다.
+       * @param {object} page pages.json의 페이지 항목
+       * @returns {HTMLElement} 완성된 카드 링크
+       */
+      createCard(page) {
+        const fragment = this.elements.cardTemplate.content.cloneNode(true);
+        const card = fragment.querySelector("a");
+        const tag = fragment.querySelector(".tag");
+        const title = fragment.querySelector("h3");
+        const description = fragment.querySelector("p");
+        const date = fragment.querySelector("time");
+
+        card.href = page.path;
+        tag.textContent = page.tags?.[0] ?? page.category;
+        title.textContent = page.title;
+        description.textContent = page.description;
+        date.textContent = page.updatedAt ?? "날짜 미정";
+        if (page.updatedAt) {
+          date.dateTime = page.updatedAt;
+        }
+
+        return card;
+      }
+
+      /**
+       * 목록을 읽지 못했을 때 사용자에게 복구 방법을 표시한다.
+       * @param {Error} error 발생한 오류
+       */
+      renderError(error) {
+        console.error("학습 페이지 목록을 불러오지 못했습니다.", error);
+        this.elements.count.textContent = "불러오기 실패";
+        const message = document.createElement("p");
+        message.className = "error";
+        message.innerHTML = "<strong>페이지 목록을 불러오지 못했습니다.</strong>잠시 후 새로고침하거나 pages.json 형식을 확인해 주세요.";
+        this.elements.catalog.replaceChildren(message);
+      }
+    }
+
+    const catalog = new StudyCatalog({
+      catalog: document.querySelector("#catalog"),
+      count: document.querySelector("#count"),
+      search: document.querySelector("#search"),
+      sectionTemplate: document.querySelector("#section-template"),
+      cardTemplate: document.querySelector("#card-template"),
+    });
+
+    catalog.initialize();
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "pages": [
+    {
+      "title": "온톨로지 6요소 구성 해설",
+      "description": "Weekly E-commerce v0.3을 예시로 Object Type, Property, Link, Function, Action을 이해합니다.",
+      "category": "Ontology",
+      "tags": ["온톨로지", "데이터 모델링", "Palantir"],
+      "path": "./ontology/ONTOLOGY_SIX_ELEMENTS_EXPLAINED.html",
+      "updatedAt": "2026-08-02"
+    }
+  ]
+}

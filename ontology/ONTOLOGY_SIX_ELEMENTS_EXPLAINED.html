@@ -1,0 +1,2310 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Weekly E-commerce v0.3 온톨로지 6요소 구성 해설</title>
+  <style>
+    :root {
+      --ink: #18232c;
+      --muted: #5c6b75;
+      --paper: #f6f3ec;
+      --surface: #fffdf8;
+      --surface-strong: #ffffff;
+      --line: #d8d3c9;
+      --navy: #173f5f;
+      --teal: #147d73;
+      --teal-soft: #e6f3ef;
+      --orange: #e36b34;
+      --orange-soft: #fff0e7;
+      --blue-soft: #eaf1f7;
+      --yellow-soft: #fff8d8;
+      --red: #a53d35;
+      --red-soft: #fbeae7;
+      --green: #2f6c4f;
+      --shadow: 0 16px 42px rgba(23, 63, 95, 0.09);
+      --radius: 20px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Nanum Gothic", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 92% 3%, rgba(227, 107, 52, 0.12), transparent 28rem),
+        radial-gradient(circle at 3% 28%, rgba(20, 125, 115, 0.10), transparent 24rem),
+        var(--paper);
+      font-family: var(--sans);
+      line-height: 1.7;
+      word-break: keep-all;
+    }
+
+    a {
+      color: var(--navy);
+      text-underline-offset: 0.18em;
+    }
+
+    a:hover {
+      color: var(--orange);
+    }
+
+    code,
+    .code {
+      padding: 0.12em 0.36em;
+      border-radius: 0.36em;
+      background: rgba(23, 63, 95, 0.08);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      word-break: break-word;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -5rem;
+      left: 1rem;
+      z-index: 100;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      color: white;
+      background: var(--navy);
+    }
+
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 5.5rem max(1.25rem, calc((100vw - 1180px) / 2)) 4.5rem;
+      color: white;
+      background: linear-gradient(132deg, #102f49 0%, #174e67 56%, #147d73 100%);
+    }
+
+    .hero::after {
+      position: absolute;
+      right: -8rem;
+      bottom: -12rem;
+      width: 34rem;
+      height: 34rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 5rem rgba(255, 255, 255, 0.025),
+        0 0 0 10rem rgba(255, 255, 255, 0.02);
+      content: "";
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.8rem;
+      color: #a8e4d8;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 850px;
+      margin: 0;
+      font-size: clamp(2.2rem, 5vw, 4.4rem);
+      line-height: 1.12;
+      letter-spacing: -0.045em;
+    }
+
+    .hero .lead {
+      max-width: 790px;
+      margin: 1.5rem 0 0;
+      color: #e7f1f3;
+      font-size: clamp(1.02rem, 1.8vw, 1.28rem);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 2rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.42rem 0.72rem;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      color: white;
+      background: rgba(255, 255, 255, 0.09);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 245px minmax(0, 1fr);
+      gap: 2.2rem;
+      width: min(1180px, calc(100% - 2.5rem));
+      margin: 0 auto;
+      padding: 3rem 0 6rem;
+    }
+
+    .side-nav {
+      position: sticky;
+      top: 1.2rem;
+      align-self: start;
+      padding: 1.1rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 8px 24px rgba(23, 63, 95, 0.06);
+      backdrop-filter: blur(12px);
+    }
+
+    .side-nav strong {
+      display: block;
+      margin: 0.2rem 0 0.65rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .side-nav a {
+      display: block;
+      padding: 0.48rem 0.6rem;
+      border-radius: 0.55rem;
+      color: var(--ink);
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+
+    .side-nav a:hover,
+    .side-nav a:focus {
+      color: var(--navy);
+      background: var(--blue-soft);
+    }
+
+    main {
+      min-width: 0;
+    }
+
+    section {
+      scroll-margin-top: 1.5rem;
+      margin-bottom: 4.5rem;
+    }
+
+    .section-kicker {
+      margin: 0 0 0.35rem;
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      color: var(--navy);
+      font-size: clamp(1.8rem, 3.6vw, 2.75rem);
+      line-height: 1.2;
+      letter-spacing: -0.035em;
+    }
+
+    h3 {
+      margin: 2rem 0 0.7rem;
+      color: var(--ink);
+      font-size: 1.28rem;
+      line-height: 1.35;
+    }
+
+    h4 {
+      margin: 1.35rem 0 0.45rem;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0.75rem 0;
+    }
+
+    .summary-box,
+    .callout {
+      padding: 1.4rem 1.55rem;
+      border: 1px solid #b8d8d1;
+      border-left: 5px solid var(--teal);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      background: var(--teal-soft);
+    }
+
+    .summary-box strong:first-child,
+    .callout strong:first-child {
+      color: var(--teal);
+    }
+
+    .callout.warning {
+      border-color: #efc8ae;
+      border-left-color: var(--orange);
+      background: var(--orange-soft);
+    }
+
+    .callout.warning strong:first-child {
+      color: #a94c23;
+    }
+
+    .callout.blocked {
+      border-color: #e4b7b2;
+      border-left-color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .callout.blocked strong:first-child {
+      color: var(--red);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin: 1.4rem 0;
+    }
+
+    .card-grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      padding: 1.35rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 9px 28px rgba(23, 63, 95, 0.05);
+    }
+
+    .card h3,
+    .card h4 {
+      margin-top: 0;
+    }
+
+    .number {
+      display: inline-grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      margin-right: 0.55rem;
+      border-radius: 50%;
+      color: white;
+      background: var(--navy);
+      font-size: 0.9rem;
+      font-weight: 850;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 0.16rem 0.48rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      vertical-align: 0.08em;
+    }
+
+    .confirmed {
+      color: var(--green);
+      background: #e6f4ea;
+    }
+
+    .provisional {
+      color: #775b00;
+      background: var(--yellow-soft);
+    }
+
+    .proposed {
+      color: #24557a;
+      background: var(--blue-soft);
+    }
+
+    .blocked-status {
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .not-run {
+      color: #5b5868;
+      background: #edeaf1;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 0.65rem;
+      margin: 1.5rem 0 0;
+      padding: 1rem;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .flow-item {
+      position: relative;
+      min-width: 125px;
+      padding: 1rem 0.8rem;
+      border-radius: 14px;
+      background: var(--blue-soft);
+      text-align: center;
+    }
+
+    .flow-item:nth-child(2),
+    .flow-item:nth-child(4) {
+      background: var(--teal-soft);
+    }
+
+    .flow-item:nth-child(5) {
+      background: var(--yellow-soft);
+    }
+
+    .flow-item:nth-child(6) {
+      background: var(--orange-soft);
+    }
+
+    .flow-item:not(:last-child)::after {
+      position: absolute;
+      top: 50%;
+      right: -0.55rem;
+      z-index: 2;
+      color: var(--muted);
+      content: "→";
+      font-weight: 900;
+      transform: translateY(-50%);
+    }
+
+    .flow-item b {
+      display: block;
+      color: var(--navy);
+      font-size: 0.88rem;
+    }
+
+    .flow-item span {
+      display: block;
+      margin-top: 0.4rem;
+      color: var(--muted);
+      font-size: 0.73rem;
+      line-height: 1.45;
+    }
+
+    .table-wrap {
+      margin: 1.2rem 0;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-strong);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th,
+    td {
+      padding: 0.8rem 0.9rem;
+      border-bottom: 1px solid #e7e2d9;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--navy);
+      background: #edf3f5;
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr:hover td {
+      background: #fffaf2;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.3rem;
+    }
+
+    li + li {
+      margin-top: 0.42rem;
+    }
+
+    .reason-list {
+      display: grid;
+      gap: 0.65rem;
+      margin: 1rem 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .reason-list li {
+      position: relative;
+      margin: 0;
+      padding: 0.75rem 0.9rem 0.75rem 2.5rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.66);
+    }
+
+    .reason-list li::before {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.85rem;
+      display: grid;
+      place-items: center;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      color: white;
+      background: var(--teal);
+      content: "✓";
+      font-size: 0.68rem;
+      font-weight: 900;
+    }
+
+    .object-example {
+      padding: 1rem 1.1rem;
+      border: 1px solid #cad8e0;
+      border-radius: 14px;
+      color: #dbeaf3;
+      background: #152f42;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .object-example .key {
+      color: #78d9cb;
+    }
+
+    .object-example .value {
+      color: #ffd08f;
+    }
+
+    .canonical-zone {
+      margin: 1.6rem 0 2.5rem;
+      padding: clamp(1rem, 3vw, 1.8rem);
+      border: 1px solid #b9d2dc;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #f3f8fa 0%, #fffdf8 72%);
+      box-shadow: var(--shadow);
+    }
+
+    .canonical-zone > h3:first-child {
+      margin-top: 0;
+      color: var(--navy);
+    }
+
+    .diagram-shell {
+      margin: 1.25rem 0;
+      overflow-x: auto;
+      border: 1px solid #c9d7dd;
+      border-radius: 18px;
+      background:
+        linear-gradient(rgba(23, 63, 95, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 63, 95, 0.035) 1px, transparent 1px),
+        #fff;
+      background-size: 24px 24px;
+    }
+
+    .ontology-svg {
+      display: block;
+      width: 100%;
+      min-width: 720px;
+      height: auto;
+    }
+
+    .graph-node rect {
+      stroke-width: 2;
+      filter: drop-shadow(0 7px 10px rgba(23, 63, 95, 0.10));
+    }
+
+    .graph-node.entity rect {
+      fill: #eaf1f7;
+      stroke: #34729a;
+    }
+
+    .graph-node.reference rect {
+      fill: #fff8d8;
+      stroke: #b9901f;
+    }
+
+    .graph-node.observation rect {
+      fill: #e6f3ef;
+      stroke: #147d73;
+    }
+
+    .graph-node text {
+      fill: #173f5f;
+      font-family: var(--sans);
+      text-anchor: middle;
+    }
+
+    .graph-node .node-title {
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .graph-node .node-subtitle {
+      fill: #5c6b75;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .graph-link {
+      fill: none;
+      stroke: #5b7587;
+      stroke-width: 2.3;
+      marker-end: url(#arrowhead);
+    }
+
+    .graph-link-label rect {
+      fill: #fffdf8;
+      stroke: #d8d3c9;
+    }
+
+    .graph-link-label text {
+      fill: #173f5f;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-anchor: middle;
+    }
+
+    .graph-note {
+      fill: #5c6b75;
+      font-family: var(--sans);
+      font-size: 12px;
+    }
+
+    .diagram-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1rem;
+      padding: 0 1rem 1rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .diagram-scroll-hint {
+      display: none;
+      margin: 0;
+      padding: 0.7rem 1rem 0;
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-swatch {
+      width: 0.85rem;
+      height: 0.85rem;
+      border: 2px solid #34729a;
+      border-radius: 0.25rem;
+      background: #eaf1f7;
+    }
+
+    .legend-swatch.reference {
+      border-color: #b9901f;
+      background: #fff8d8;
+    }
+
+    .legend-swatch.observation {
+      border-color: #147d73;
+      background: #e6f3ef;
+    }
+
+    .canonical-card {
+      position: relative;
+      overflow: hidden;
+      border-top: 4px solid var(--navy);
+    }
+
+    .canonical-card::after {
+      position: absolute;
+      top: -2.7rem;
+      right: -2.7rem;
+      width: 6rem;
+      height: 6rem;
+      border-radius: 50%;
+      background: rgba(20, 125, 115, 0.08);
+      content: "";
+    }
+
+    .example-state {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0.7rem 0 0;
+    }
+
+    .readiness-track {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin: 1.25rem 0;
+    }
+
+    .readiness-step {
+      position: relative;
+      min-height: 150px;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--navy);
+      border-radius: 15px;
+      background: var(--surface-strong);
+    }
+
+    .readiness-step:not(:last-child)::after {
+      position: absolute;
+      top: 3.1rem;
+      right: -0.62rem;
+      z-index: 2;
+      color: var(--orange);
+      content: "→";
+      font-size: 1.1rem;
+      font-weight: 900;
+    }
+
+    .readiness-step.done {
+      border-top-color: var(--green);
+    }
+
+    .readiness-step.blocked-step {
+      border-top-color: var(--red);
+    }
+
+    .readiness-step h4 {
+      margin-top: 0;
+      color: var(--navy);
+    }
+
+    .readiness-step p {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .scope-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin: 2.4rem 0 1.2rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .scope-divider::before,
+    .scope-divider::after {
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+      content: "";
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: stretch;
+      gap: 0.7rem;
+      margin: 1.4rem 0;
+    }
+
+    .architecture .lane {
+      padding: 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .architecture .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--orange);
+      font-size: 1.6rem;
+      font-weight: 900;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: 1.2fr 2fr;
+      gap: 1rem;
+      padding: 0.85rem 0;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .metric-row:last-child {
+      border-bottom: 0;
+    }
+
+    .metric-row dt {
+      color: var(--navy);
+      font-weight: 800;
+    }
+
+    .metric-row dd {
+      margin: 0;
+    }
+
+    .decision-tree {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 1.25rem 0;
+    }
+
+    .decision {
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .decision b {
+      color: var(--teal);
+    }
+
+    .source-list {
+      padding: 1.2rem 1.4rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .source-list li {
+      padding-left: 0.2rem;
+    }
+
+    .footer {
+      padding: 2.8rem 1.25rem;
+      color: #d9e5ea;
+      background: #102f49;
+      text-align: center;
+    }
+
+    .footer p {
+      margin: 0.3rem 0;
+    }
+
+    .footer a {
+      color: #a8e4d8;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .side-nav {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+      }
+
+      .side-nav strong {
+        width: 100%;
+      }
+
+      .side-nav a {
+        padding: 0.4rem 0.55rem;
+        border: 1px solid var(--line);
+      }
+
+      .flow {
+        grid-template-columns: repeat(6, 140px);
+      }
+
+      .card-grid.three {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .hero {
+        padding-top: 4rem;
+      }
+
+      .layout {
+        width: min(100% - 1.4rem, 1180px);
+      }
+
+      .card-grid,
+      .card-grid.three,
+      .decision-tree {
+        grid-template-columns: 1fr;
+      }
+
+      .architecture {
+        grid-template-columns: 1fr;
+      }
+
+      .architecture .arrow {
+        transform: rotate(90deg);
+      }
+
+      .metric-row {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+      }
+
+      .readiness-track {
+        grid-template-columns: 1fr;
+      }
+
+      .readiness-step {
+        min-height: auto;
+      }
+
+      .readiness-step:not(:last-child)::after {
+        top: auto;
+        right: 50%;
+        bottom: -0.9rem;
+        transform: translateX(50%) rotate(90deg);
+      }
+
+      .diagram-scroll-hint {
+        display: block;
+      }
+
+      th,
+      td {
+        min-width: 135px;
+      }
+    }
+
+    @media print {
+      @page {
+        margin: 14mm;
+      }
+
+      body {
+        background: white;
+        font-size: 10pt;
+      }
+
+      .hero {
+        padding: 2rem;
+        color: var(--ink);
+        background: white;
+        border-bottom: 3px solid var(--navy);
+      }
+
+      .hero .lead,
+      .eyebrow {
+        color: var(--ink);
+      }
+
+      .hero-meta,
+      .side-nav {
+        display: none;
+      }
+
+      .layout {
+        display: block;
+        width: 100%;
+        padding: 1.5rem 0;
+      }
+
+      section {
+        margin-bottom: 2rem;
+        break-inside: avoid-page;
+      }
+
+      .card,
+      .table-wrap,
+      .flow,
+      .architecture .lane {
+        box-shadow: none;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .footer {
+        color: var(--ink);
+        background: white;
+        border-top: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Ontology architecture explainer · v0.3</p>
+      <h1>Object Type부터 Action까지,<br>왜 여섯 요소로 나누는가</h1>
+      <p class="lead">
+        Weekly E-commerce v0.3의 <strong>Object Type, Object, Property, Link, Function,
+        Action</strong>이 어떤 책임을 맡고, 왜 현재와 같은 최소 read-only 구조로
+        선택되었는지를 데이터·Identity·보안·운영 관점에서 설명한다.
+      </p>
+      <div class="hero-meta" aria-label="문서 메타데이터">
+        <span class="pill">기준일 2026-08-02</span>
+        <span class="pill">Canonical 4 / 12 / 4 / 2 / 0</span>
+        <span class="pill">POC Object instance 214</span>
+        <span class="pill">Standalone HTML · no dependency</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="side-nav" aria-label="문서 목차">
+      <strong>Contents</strong>
+      <a href="#answer">한 문장 답</a>
+      <a href="#premise">출발점과 설계 원칙</a>
+      <a href="#object-type">1. Object Type</a>
+      <a href="#object">2. Object</a>
+      <a href="#canonical-examples">↳ Canonical Object 예시</a>
+      <a href="#property">3. Property</a>
+      <a href="#measure-ownership">↳ Sell-out·ROAS 소유 규칙</a>
+      <a href="#link">4. Link</a>
+      <a href="#function">5. Function</a>
+      <a href="#action">6. Action</a>
+      <a href="#together">여섯 요소의 실행 흐름</a>
+      <a href="#decision">판단 기준</a>
+      <a href="#status">현재 구현 상태</a>
+      <a href="#review">객관적 검토</a>
+      <a href="#sources">근거 문서</a>
+    </nav>
+
+    <main id="main">
+      <section id="answer">
+        <p class="section-kicker">Executive answer</p>
+        <h2>여섯 요소는 “업무 의미”와 “실행 권한”을 섞지 않기 위해 분리한다</h2>
+        <div class="summary-box">
+          <strong>핵심 답:</strong>
+          Object Type은 규칙, Object는 실제 대상, Property는 대상의 값, Link는 대상 사이의
+          역할, Function은 상태를 바꾸지 않는 계산, Action은 검증된 상태 변경이다.
+          이 책임 분리를 지키면 LLM이나 애플리케이션이 물리 테이블을 직접 추측하지 않고도
+          <em>무엇을 찾고 → 어떤 범위를 선택하고 → 무엇을 계산하고 → 무엇을 변경할 수 있는지</em>를
+          안전하게 판단할 수 있다.
+        </div>
+
+        <div class="flow" aria-label="온톨로지 여섯 요소의 책임 흐름">
+          <div class="flow-item"><b>Object Type</b><span>공통 identity·shape·행동 규칙</span></div>
+          <div class="flow-item"><b>Object</b><span>실제 선택 가능한 업무 인스턴스</span></div>
+          <div class="flow-item"><b>Property</b><span>인스턴스를 설명하는 값</span></div>
+          <div class="flow-item"><b>Link</b><span>인스턴스 사이의 역할 관계</span></div>
+          <div class="flow-item"><b>Function</b><span>읽기·집계·감사·추론</span></div>
+          <div class="flow-item"><b>Action</b><span>권한 있는 상태 변경</span></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>요소</th>
+                <th>답하는 질문</th>
+                <th>책임</th>
+                <th>잘못 섞었을 때의 위험</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Object Type</strong></td>
+                <td>“무엇의 종류인가?”</td>
+                <td>Identity, Property, Link, lifecycle의 공통 계약</td>
+                <td>테이블 구조가 곧 업무 의미가 되고 같은 개념이 중복된다.</td>
+              </tr>
+              <tr>
+                <td><strong>Object</strong></td>
+                <td>“정확히 어느 대상인가?”</td>
+                <td>타입에 속하는 실제 identity-bearing 인스턴스</td>
+                <td>타입 정의만 존재하는데 실제 데이터가 있다고 오인한다.</td>
+              </tr>
+              <tr>
+                <td><strong>Property</strong></td>
+                <td>“그 대상의 값은 무엇인가?”</td>
+                <td>Identity·제목·시간·분류·측정·출처 값</td>
+                <td>단순 문자열까지 Object로 만들어 모델이 폭증한다.</td>
+              </tr>
+              <tr>
+                <td><strong>Link</strong></td>
+                <td>“어떤 역할로 누구와 연결되는가?”</td>
+                <td>방향·cardinality·필수성·join 근거</td>
+                <td>label join, fan-out, orphan, 잘못된 국가 간 병합이 생긴다.</td>
+              </tr>
+              <tr>
+                <td><strong>Function</strong></td>
+                <td>“무엇을 읽고 계산할 수 있는가?”</td>
+                <td>Side effect 없는 bounded 조회·집계·감사</td>
+                <td>자유 SQL이나 숨은 계산이 정책을 우회한다.</td>
+              </tr>
+              <tr>
+                <td><strong>Action</strong></td>
+                <td>“무엇을 실제로 바꿀 수 있는가?”</td>
+                <td>권한·검증·감사·보상 가능한 mutation</td>
+                <td>LLM 답변이나 분석 결과가 곧바로 업무 상태를 변경한다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="premise">
+        <p class="section-kicker">Design premise</p>
+        <h2>출발점은 “테이블”이 아니라 “업무 현실”이다</h2>
+        <p>
+          현재 source는 주간 이커머스 BI export 형태의 와이드 데이터다. 그러나
+          <code>테이블 하나 = Object Type 하나</code>로 복사하면, 시장·리테일러·관측값·분류값이
+          한 덩어리가 되고 동일한 시장과 리테일러가 모든 행에서 반복된다. 이 설계는 먼저
+          source row의 Grain과 반복되는 업무 명사를 분리한 뒤, 독립 identity가 필요한 대상만
+          Object Type으로 승격한다.
+        </p>
+
+        <div class="card-grid three">
+          <article class="card">
+            <h3>1. Grain 우선</h3>
+            <p>한 행이 무엇 하나를 뜻하는지 먼저 고정한다. 현재 Overview physical Grain v1은 날짜·시장·리테일러와 다섯 source 분류의 8-field tuple이다.</p>
+          </article>
+          <article class="card">
+            <h3>2. Identity 우선</h3>
+            <p>이름이나 현재 값이 아니라 불변 business ID, canonical ID, 안정적 복합키 순서로 identity를 결정한다.</p>
+          </article>
+          <article class="card">
+            <h3>3. 증거 우선</h3>
+            <p>근거 없는 master·mapping·cardinality·인과관계를 만들지 않는다. 부족한 것은 <span class="status blocked-status">BLOCKED</span>로 남긴다.</p>
+          </article>
+        </div>
+
+        <h3>왜 전체 설계 29개를 바로 활성화하지 않았는가</h3>
+        <p>
+          full design catalog에는 Entity, Reference, Time, Observation, Plan·Target, Workflow까지
+          29개 Object Type 후보가 있다. 하지만 첫 canonical release는 source evidence를 안전하게
+          읽고 감사하는 데 필요한 정확한 최소 closure만 채택한다. Metric 정의, canonical master,
+          writeback authority가 없는 상태에서 전체 catalog를 seed하면 “문서에 있다”가 “실행 가능하다”로
+          잘못 승격되기 때문이다.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>범위</th>
+                <th>Object Type</th>
+                <th>Property</th>
+                <th>Link</th>
+                <th>Function</th>
+                <th>Action</th>
+                <th>의미</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Canonical 최소 release</strong></td>
+                <td>4</td>
+                <td>12</td>
+                <td>4</td>
+                <td>2</td>
+                <td>0</td>
+                <td>운영용 계약이지만 source/master/runtime 근거가 없어 activation 차단</td>
+              </tr>
+              <tr>
+                <td><strong>Synthetic POC</strong></td>
+                <td>3</td>
+                <td>13</td>
+                <td>3</td>
+                <td>3</td>
+                <td>0</td>
+                <td>Impression·Click 개념 검증용 fixture-only lane</td>
+              </tr>
+              <tr>
+                <td><strong>Full design catalog</strong></td>
+                <td>29</td>
+                <td colspan="4">후속 0.3.x에서 근거가 닫힌 vertical slice별 승격</td>
+                <td>설계 projection이며 release나 구현 완료가 아님</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="object-type">
+        <p class="section-kicker">Element 01</p>
+        <h2><span class="number">1</span>Object Type — 공통 규칙을 가진 업무 개념</h2>
+        <p>
+          Object Type은 클래스에 가깝다. 개별 데이터 행을 담는 그릇이 아니라, 같은 정체성 규칙과
+          Property, Link, 권한, lifecycle을 공유하는 업무 대상의 계약이다. 독립 조회·반복 연결·감사·선택
+          필요성이 강하거나, 명확한 시점·Grain·출처를 보존해야 하는 Observation일 때 Object Type으로 만든다.
+        </p>
+
+        <h3>Canonical 최소 release가 네 타입을 고른 이유</h3>
+        <div class="card-grid">
+          <article class="card">
+            <h3><code>Market</code> <span class="status confirmed">CONFIRMED</span></h3>
+            <ul class="reason-list">
+              <li>시장 범위는 여러 Retailer와 Observation이 반복 참조한다.</li>
+              <li><code>countryCode</code>라는 독립 identity가 필요하다.</li>
+              <li>검색·필터·권한·통화 mapping의 기준점으로 재사용된다.</li>
+            </ul>
+            <p><strong>Property로 두지 않은 이유:</strong> 단순 country 문자열보다 더 긴 수명주기와 관계를 가지며, source label과 canonical Market을 구분해야 한다.</p>
+          </article>
+
+          <article class="card">
+            <h3><code>Currency</code> <span class="status confirmed">CONFIRMED 의미</span></h3>
+            <ul class="reason-list">
+              <li>여러 Market이 같은 Currency를 참조할 수 있는 canonical reference다.</li>
+              <li>통화 코드는 Amount 행마다 복제하기보다 하나의 vocabulary로 관리해야 한다.</li>
+              <li>Market과의 effective-dated mapping을 명시적으로 검증해야 한다.</li>
+            </ul>
+            <p><strong>중요:</strong> 의미 계약은 확정됐지만 materialized master와 instance가 없어 구현·activation은 차단돼 있다.</p>
+          </article>
+
+          <article class="card">
+            <h3><code>Retailer</code> <span class="status confirmed">CONFIRMED 의미</span></h3>
+            <ul class="reason-list">
+              <li>표시 이름이 바뀌어도 유지되는 불변 <code>retailerId</code>가 필요하다.</li>
+              <li>Market, Observation, 향후 Plan·Target이 반복 참조한다.</li>
+              <li>rename·merge·split·source crosswalk를 별도 관리해야 한다.</li>
+            </ul>
+            <p><strong>이름을 identity로 쓰지 않는 이유:</strong> 같은 “Amazon”도 CA·DE·UK에서 서로 다른 Retailer Object일 수 있다.</p>
+          </article>
+
+          <article class="card">
+            <h3><code>WeeklyEcommerceOverviewObservation</code> <span class="status provisional">PROVISIONAL</span></h3>
+            <ul class="reason-list">
+              <li>source row 하나의 시점·Grain·출처·정정 증거를 보존한다.</li>
+              <li>독립 lifecycle은 약해도 Observation 예외 조건을 충족한다.</li>
+              <li>raw retrieval과 quality audit의 root로 사용된다.</li>
+            </ul>
+            <p><strong>Fact row를 그대로 업무 실적으로 부르지 않는 이유:</strong> 현재는 BI export의 source evidence이며 universal KPI나 원천 거래 event가 아니다.</p>
+          </article>
+        </div>
+
+        <h3>왜 source의 모든 명사를 Object Type으로 만들지 않았는가</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Source 개념</th>
+                <th>현재 표현</th>
+                <th>Object Type으로 승격하지 않은 이유</th>
+                <th>승격 조건</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>product</code></td>
+                <td><code>sourceProductValue</code> PROVENANCE Property</td>
+                <td>현재 값은 fixture marker이며 canonical Product identity·master가 아니다.</td>
+                <td>공식 product ID, taxonomy, crosswalk, 자체 속성·관계 확보</td>
+              </tr>
+              <tr>
+                <td><code>category</code></td>
+                <td><code>reportingCategory</code> DIMENSION Property</td>
+                <td>source 분류값일 뿐 독립 taxonomy lifecycle과 owner가 없다.</td>
+                <td>승인 vocabulary, stable code, hierarchy·version 계약 확보</td>
+              </tr>
+              <tr>
+                <td><code>ad_type</code></td>
+                <td><code>advertisingType</code> DIMENSION Property</td>
+                <td>full catalog의 <code>AdType</code> 후보는 있으나 현재 source mapping 근거가 부족하다.</td>
+                <td>canonical AdType master와 source-to-master mapping 승인</td>
+              </tr>
+              <tr>
+                <td><code>page_type</code></td>
+                <td><code>pageType</code> DIMENSION Property</td>
+                <td>canonical Touchpoint identity·관계·행동이 확인되지 않았다.</td>
+                <td>Touchpoint master, 역할, 소유자, mapping 확보</td>
+              </tr>
+              <tr>
+                <td><code>pur_category</code></td>
+                <td><code>purchasedCategory</code> DIMENSION Property</td>
+                <td>reporting category와 역할은 다르지만 canonical Product/Category Object 근거는 없다.</td>
+                <td>구매 상품 identity와 role-specific Link 근거 확보</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="object">
+        <p class="section-kicker">Element 02</p>
+        <h2><span class="number">2</span>Object — 타입에 속하는 실제 업무 인스턴스</h2>
+        <p>
+          Object Type이 “Market은 <code>countryCode</code>로 식별한다”는 규칙이라면,
+          Object는 그 규칙을 만족하는 <code>Market(countryCode="&lt;canonical-country-code&gt;")</code>다.
+          이 둘을 분리해야 타입 정의가 존재하는 것과 실제 population이 materialize된 것을 혼동하지 않는다.
+        </p>
+
+        <div id="canonical-examples" class="canonical-zone">
+          <h3>비POC canonical Object 예시</h3>
+          <p>
+            아래 예시는 production 형태를 설명하는 <strong>schema example</strong>이다. 현재 운영 master와
+            immutable source population이 준비되지 않았으므로 실제 국가·통화·리테일러 값이나 UUID를
+            임의로 만들지 않는다. Placeholder가 채워지고 identity·Link gate를 통과해야 비로소 실제
+            canonical Object가 된다.
+          </p>
+
+          <div class="callout warning">
+            <strong>예시의 증거 수준:</strong>
+            <code>SCHEMA_EXAMPLE_ONLY</code> / <code>NOT_MATERIALIZED</code>.
+            이는 POC fixture도 아니고 production instance도 아니다. “운영이라면 어떤 모양이어야 하는가”를
+            보여 주는 계약 예시다.
+          </div>
+
+          <h3>도식 1. Canonical 최소 Object graph</h3>
+          <div class="diagram-shell" tabindex="0" aria-label="Canonical Object graph. 좁은 화면에서는 좌우로 스크롤할 수 있습니다.">
+            <svg class="ontology-svg" viewBox="0 0 1000 560" role="img" aria-labelledby="canonical-graph-title canonical-graph-desc">
+              <title id="canonical-graph-title">Canonical 최소 Object graph</title>
+              <desc id="canonical-graph-desc">Retailer가 Market에 속하고 Market이 기본 Currency를 사용하며, WeeklyEcommerceOverviewObservation이 Market과 Retailer에 연결되는 네 Object Type과 네 required Link 도식</desc>
+              <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#5b7587"></polygon>
+                </marker>
+              </defs>
+
+              <path class="graph-link" d="M 610 120 L 710 120"></path>
+              <path class="graph-link" d="M 280 315 C 330 290, 345 205, 410 160"></path>
+              <path class="graph-link" d="M 500 365 L 500 180"></path>
+              <path class="graph-link" d="M 410 420 C 335 410, 315 355, 280 330"></path>
+
+              <g class="graph-link-label" transform="translate(660 45)">
+                <rect x="-72" y="-15" width="144" height="30" rx="10"></rect>
+                <text y="4">usesDefaultCurrency</text>
+              </g>
+              <g class="graph-link-label" transform="translate(335 247)">
+                <rect x="-47" y="-15" width="94" height="30" rx="10"></rect>
+                <text y="4">operatesIn</text>
+              </g>
+              <g class="graph-link-label" transform="translate(575 272)">
+                <rect x="-67" y="-15" width="134" height="30" rx="10"></rect>
+                <text y="4">observedInMarket</text>
+              </g>
+              <g class="graph-link-label" transform="translate(330 400)">
+                <rect x="-68" y="-15" width="136" height="30" rx="10"></rect>
+                <text y="4">measuredAtRetailer</text>
+              </g>
+
+              <g class="graph-node entity" transform="translate(390 70)">
+                <rect width="220" height="110" rx="18"></rect>
+                <text class="node-title" x="110" y="38">Market Object</text>
+                <text class="node-subtitle" x="110" y="66">countryCode</text>
+                <text class="node-subtitle" x="110" y="88">IDENTITY</text>
+              </g>
+              <g class="graph-node reference" transform="translate(710 70)">
+                <rect width="220" height="110" rx="18"></rect>
+                <text class="node-title" x="110" y="38">Currency Object</text>
+                <text class="node-subtitle" x="110" y="66">currencyCode</text>
+                <text class="node-subtitle" x="110" y="88">REFERENCE</text>
+              </g>
+              <g class="graph-node entity" transform="translate(60 270)">
+                <rect width="220" height="120" rx="18"></rect>
+                <text class="node-title" x="110" y="40">Retailer Object</text>
+                <text class="node-subtitle" x="110" y="69">retailerId</text>
+                <text class="node-subtitle" x="110" y="92">retailerName</text>
+              </g>
+              <g class="graph-node observation" transform="translate(390 365)">
+                <rect width="300" height="135" rx="18"></rect>
+                <text class="node-title" x="150" y="40">Overview Observation</text>
+                <text class="node-subtitle" x="150" y="69">sourceEvidenceIdentity</text>
+                <text class="node-subtitle" x="150" y="92">weekStartDate · provenance</text>
+                <text class="node-subtitle" x="150" y="114">SOURCE_EVIDENCE</text>
+              </g>
+
+              <text class="graph-note" x="60" y="535">실선 화살표 = canonical 최소 release의 required M:1 Link · 값은 master/source evidence 승인 후 materialize</text>
+            </svg>
+            <p class="diagram-scroll-hint">↔ 좁은 화면에서는 도식을 좌우로 스크롤하세요.</p>
+            <div class="diagram-legend" aria-label="Object graph 범례">
+              <span class="legend-item"><span class="legend-swatch"></span>Entity Object</span>
+              <span class="legend-item"><span class="legend-swatch reference"></span>Reference Object</span>
+              <span class="legend-item"><span class="legend-swatch observation"></span>Source-evidence Observation</span>
+            </div>
+          </div>
+
+          <h3>네 canonical Object의 production 형태</h3>
+          <div class="card-grid">
+            <article class="card canonical-card">
+              <h3>Market Object</h3>
+              <div class="object-example"><span class="key"># 설명용 canonical shape — 실제 row 아님</span>
+<span class="key">objectType</span>: <span class="value">Market</span>
+<span class="key">identity</span>:
+  <span class="key">countryCode</span>: <span class="value">&lt;approved-canonical-country-code&gt;</span>
+<span class="key">links</span>:
+  <span class="key">usesDefaultCurrency</span>: <span class="value">Currency.&lt;approved-code&gt;</span></div>
+              <div class="example-state">
+                <span class="status confirmed">SEMANTICS CONFIRMED</span>
+                <span class="status blocked-status">OBJECT NOT MATERIALIZED</span>
+              </div>
+              <p>한 Object는 governance가 승인한 하나의 Market을 뜻한다. Source country label을 그대로 production identity로 승격하지 않는다.</p>
+            </article>
+
+            <article class="card canonical-card">
+              <h3>Currency Object</h3>
+              <div class="object-example"><span class="key"># 설명용 canonical shape — 실제 row 아님</span>
+<span class="key">objectType</span>: <span class="value">Currency</span>
+<span class="key">identity</span>:
+  <span class="key">currencyCode</span>: <span class="value">&lt;approved-currency-code&gt;</span></div>
+              <div class="example-state">
+                <span class="status confirmed">SEMANTICS CONFIRMED</span>
+                <span class="status blocked-status">MASTER MISSING</span>
+              </div>
+              <p>한 Object는 승인된 canonical Currency 하나다. 실제 code vocabulary와 effective Market mapping은 master evidence가 필요하다.</p>
+            </article>
+
+            <article class="card canonical-card">
+              <h3>Retailer Object</h3>
+              <div class="object-example"><span class="key"># 설명용 canonical shape — 실제 row 아님</span>
+<span class="key">objectType</span>: <span class="value">Retailer</span>
+<span class="key">identity</span>:
+  <span class="key">retailerId</span>: <span class="value">&lt;ontology-issued-immutable-uuid&gt;</span>
+<span class="key">properties</span>:
+  <span class="key">retailerName</span>: <span class="value">&lt;approved-display-name&gt;</span>
+<span class="key">links</span>:
+  <span class="key">operatesIn</span>: <span class="value">Market.&lt;canonical-country-code&gt;</span></div>
+              <div class="example-state">
+                <span class="status confirmed">SEMANTICS CONFIRMED</span>
+                <span class="status blocked-status">MASTER/CROSSWALK MISSING</span>
+              </div>
+              <p>한 Object는 rename과 무관하게 동일성을 유지하는 canonical Retailer 하나다. Source label은 provenance crosswalk이지 ID가 아니다.</p>
+            </article>
+
+            <article class="card canonical-card">
+              <h3>Weekly Overview Observation Object</h3>
+              <div class="object-example"><span class="key"># 설명용 canonical shape — 실제 row 아님</span>
+<span class="key">objectType</span>: <span class="value">WeeklyEcommerceOverviewObservation</span>
+<span class="key">identity</span>:
+  <span class="key">sourceEvidenceIdentity</span>: <span class="value">&lt;immutable-capture-id&gt;#row=&lt;stable-key-or-ordinal&gt;</span>
+<span class="key">properties</span>:
+  <span class="key">contentFingerprint</span>: <span class="value">&lt;lowercase-sha256&gt;</span>
+  <span class="key">weekStartDate</span>: <span class="value">&lt;typed-date&gt;</span>
+  <span class="key">sourceProductValue</span>: <span class="value">&lt;source-value-or-null&gt;</span>
+  <span class="key">reportingCategory</span>: <span class="value">&lt;source-classification-or-null&gt;</span>
+  <span class="key">advertisingType</span>: <span class="value">&lt;source-classification-or-null&gt;</span>
+  <span class="key">pageType</span>: <span class="value">&lt;source-classification-or-null&gt;</span>
+  <span class="key">purchasedCategory</span>: <span class="value">&lt;source-classification-or-null&gt;</span>
+<span class="key">links</span>:
+  <span class="key">observedInMarket</span>: <span class="value">Market.&lt;canonical-country-code&gt;</span>
+  <span class="key">measuredAtRetailer</span>: <span class="value">Retailer.&lt;canonical-uuid&gt;</span></div>
+              <div class="example-state">
+                <span class="status provisional">MODEL PROVISIONAL</span>
+                <span class="status blocked-status">SOURCE IDENTITY MISSING</span>
+              </div>
+              <p>한 Object는 immutable source artifact 안의 물리 row evidence 하나다. Fingerprint나 8-field Grain만으로 identity를 만들지 않는다.</p>
+            </article>
+          </div>
+
+          <h3>후속 full-scope의 비POC Object 개념 예시</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Object Type</th>
+                  <th>Object 하나가 뜻하는 것</th>
+                  <th>Identity 상태</th>
+                  <th>현재 모델 상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>BusinessPeriod</code></td>
+                  <td>특정 BusinessCalendar의 period kind·year·period number로 식별되는 업무 기간 하나</td>
+                  <td>복합 identity 의미만 문서화; master instance 없음</td>
+                  <td><span class="status proposed">PROPOSED</span></td>
+                </tr>
+                <tr>
+                  <td><code>PerformanceInvestigation</code></td>
+                  <td>분석 근거와 시장 scope를 보존하는 workflow 조사 건 하나</td>
+                  <td>Workflow store UUID authority는 정의됐으나 Object·Action 비활성</td>
+                  <td><span class="status proposed">PROPOSED</span></td>
+                </tr>
+                <tr>
+                  <td><code>DataSnapshot</code></td>
+                  <td>특정 시점에 고정된 source snapshot 하나</td>
+                  <td>Canonical identity·required Link 근거 부족</td>
+                  <td><span class="status blocked-status">BLOCKED</span></td>
+                </tr>
+                <tr>
+                  <td><code>PaidSelloutObservation</code></td>
+                  <td>승인된 business Grain에서 기록되는 paid sellout 관측 하나</td>
+                  <td>Source-native Grain·mapping·Metric evidence 부족</td>
+                  <td><span class="status blocked-status">BLOCKED</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>도식 2. 계약에서 실제 Object가 되기까지</h3>
+          <div class="readiness-track" aria-label="Canonical Object materialization readiness 단계">
+            <article class="readiness-step done">
+              <h4>1. Type 계약</h4>
+              <span class="status confirmed">DOCUMENTED</span>
+              <p>Identity Property, Property surface, required Link 의미를 정의한다.</p>
+            </article>
+            <article class="readiness-step blocked-step">
+              <h4>2. Master·Source 근거</h4>
+              <span class="status blocked-status">BLOCKED</span>
+              <p>Currency/Retailer master, crosswalk, immutable snapshot을 확보한다.</p>
+            </article>
+            <article class="readiness-step blocked-step">
+              <h4>3. Object materialization</h4>
+              <span class="status not-run">NOT RUN</span>
+              <p>승인 identity로 production Object population을 생성·검증한다.</p>
+            </article>
+            <article class="readiness-step blocked-step">
+              <h4>4. Link graph closure</h4>
+              <span class="status not-run">NOT RUN</span>
+              <p>Orphan·multi-target·Market path mismatch가 0인지 확인한다.</p>
+            </article>
+            <article class="readiness-step blocked-step">
+              <h4>5. Runtime activation</h4>
+              <span class="status not-run">NOT RUN</span>
+              <p>Registry ACTIVE, resolver, bounded Function과 권한 evidence를 연결한다.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="scope-divider">Synthetic POC reference — canonical production과 분리</div>
+
+        <h3>참고: POC에서 검증 중인 fixture Object shape</h3>
+
+        <div class="architecture" aria-label="Object Type과 Object의 관계 예시">
+          <div class="lane">
+            <h3>Object Type</h3>
+            <p><code>Retailer</code></p>
+            <p>Identity: <code>retailerId</code><br>Title: <code>retailerName</code><br>Required Link: <code>operatesIn</code></p>
+          </div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div class="lane">
+            <h3>Object</h3>
+            <p><code>Retailer.49d1…b5db</code></p>
+            <p>Name: Amazon<br>Market: DE</p>
+          </div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div class="lane">
+            <h3>선택 가능한 Scope</h3>
+            <p>DE × Amazon의 observation set</p>
+            <p>검증된 identity와 Link가 있어야 Function 입력으로 사용할 수 있다.</p>
+          </div>
+        </div>
+
+        <h3>Synthetic POC 대표 Object 예시</h3>
+        <div class="card-grid">
+          <article class="card">
+            <h3>Market Object</h3>
+            <div class="object-example"><span class="key">objectType</span>: <span class="value">Market</span>
+<span class="key">countryCode</span>: <span class="value">DE</span>
+<span class="key">evidenceClass</span>: <span class="value">FIXTURE_ONLY</span></div>
+            <p>POC에서는 exact source code를 보존한다. <code>UK → GB</code> 같은 normalization을 임의 적용하지 않는다.</p>
+          </article>
+
+          <article class="card">
+            <h3>Retailer Object</h3>
+            <div class="object-example"><span class="key">objectType</span>: <span class="value">Retailer</span>
+<span class="key">retailerId</span>: <span class="value">49d1c83d-adab-546a-a2db-7823f596b5db</span>
+<span class="key">retailerName</span>: <span class="value">Amazon</span>
+<span class="key">operatesIn</span>: <span class="value">Market.DE</span></div>
+            <p>UUID는 POC pair namespace에서 결정적으로 만든 fixture ID이며 production master ID가 아니다.</p>
+          </article>
+
+          <article class="card">
+            <h3>Observation Object</h3>
+            <div class="object-example"><span class="key">objectType</span>: <span class="value">WeeklyEcommerceOverviewObservation</span>
+<span class="key">sourceEvidenceIdentity</span>: <span class="value">PENDING_PERSISTED_ORDINAL</span>
+<span class="key">weekStartDate</span>: <span class="value">2025-09-29</span>
+<span class="key">observedInMarket</span>: <span class="value">Market.DE</span>
+<span class="key">measuredAtRetailer</span>: <span class="value">Retailer.49d1…b5db</span></div>
+            <p>샘플 값은 존재하지만 persisted ordinal이 아직 없어 실행된 Object로 주장하지 않는다.</p>
+          </article>
+
+        </div>
+
+        <div class="callout blocked">
+          <strong>왜 ONTOLOGY_MODEL.md에서 Object가 안 보였는가:</strong>
+          그 문서는 타입·identity·Grain·Link 계약을 정의하는 schema-level 문서다. production
+          Object population은 아직 materialize되지 않았고, synthetic POC도 대표 샘플과
+          <code>5 Market + 9 Retailer + 200 Observation = 214</code> closure만 계약한 상태다.
+          214개 전체의 무제한 열거도 보안·범위 제어 때문에 허용하지 않는다.
+        </div>
+
+        <h3>Object identity를 보수적으로 설계한 이유</h3>
+        <dl>
+          <div class="metric-row">
+            <dt>Market</dt>
+            <dd><code>countryCode</code>. 다만 production alias와 ISO normalization은 별도 승인 대상이다.</dd>
+          </div>
+          <div class="metric-row">
+            <dt>Retailer</dt>
+            <dd><code>retailerId</code>. <code>retailerName</code>은 rename 가능한 TITLE이므로 identity가 아니다.</dd>
+          </div>
+          <div class="metric-row">
+            <dt>Observation</dt>
+            <dd>Immutable snapshot/job과 stable row key 또는 persisted ordinal을 결합한 <code>sourceEvidenceIdentity</code>.</dd>
+          </div>
+          <div class="metric-row">
+            <dt>contentFingerprint</dt>
+            <dd>내용 변경 탐지용 PROVENANCE다. correction 때 바뀔 수 있으므로 identity가 아니다.</dd>
+          </div>
+          <div class="metric-row">
+            <dt>8-field tuple</dt>
+            <dd>집계·grouping Grain이다. synthetic population에서 중복되므로 row identity가 아니다.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="property">
+        <p class="section-kicker">Element 03</p>
+        <h2><span class="number">3</span>Property — Object를 설명하는 typed value</h2>
+        <p>
+          Property는 독립 대상이 아니라 Object에 귀속되는 값이다. 문자열·숫자·날짜·상태·분류·측정값을
+          Property로 유지하면 모델을 단순하게 유지하면서도 identity, 표시, 필터, 집계, provenance를
+          명시적으로 구분할 수 있다.
+        </p>
+
+        <h3>Canonical 12개 Property가 선택된 이유</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Owner</th>
+                <th>Property</th>
+                <th>Role</th>
+                <th>선택 이유</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Market</td>
+                <td><code>countryCode</code></td>
+                <td>IDENTITY</td>
+                <td>Market를 결정적으로 참조하는 최소 canonical identity</td>
+              </tr>
+              <tr>
+                <td>Currency</td>
+                <td><code>currencyCode</code></td>
+                <td>IDENTITY</td>
+                <td>통화 vocabulary를 Amount row에서 분리하는 canonical identity</td>
+              </tr>
+              <tr>
+                <td rowspan="2">Retailer</td>
+                <td><code>retailerId</code></td>
+                <td>IDENTITY</td>
+                <td>rename과 무관한 ontology-owned immutable ID</td>
+              </tr>
+              <tr>
+                <td><code>retailerName</code></td>
+                <td>TITLE</td>
+                <td>사용자 표시·검색용 값이며 identity에서 분리</td>
+              </tr>
+              <tr>
+                <td rowspan="8">WeeklyEcommerceOverviewObservation</td>
+                <td><code>sourceEvidenceIdentity</code></td>
+                <td>IDENTITY</td>
+                <td>Immutable source artifact 안의 row를 재현 가능하게 식별</td>
+              </tr>
+              <tr>
+                <td><code>contentFingerprint</code></td>
+                <td>PROVENANCE</td>
+                <td>내용 drift 탐지; identity와 분리</td>
+              </tr>
+              <tr>
+                <td><code>weekStartDate</code></td>
+                <td>TIME</td>
+                <td>Source date의 typed projection; 임의 calendar 의미는 추가하지 않음</td>
+              </tr>
+              <tr>
+                <td><code>sourceProductValue</code></td>
+                <td>PROVENANCE</td>
+                <td>Canonical Product로 오인하지 않고 source 값을 보존</td>
+              </tr>
+              <tr>
+                <td><code>reportingCategory</code></td>
+                <td>DIMENSION</td>
+                <td>Source reporting 분류를 제한된 필터/설명 값으로 보존</td>
+              </tr>
+              <tr>
+                <td><code>advertisingType</code></td>
+                <td>DIMENSION</td>
+                <td>Canonical AdType master 전 source vocabulary 보존</td>
+              </tr>
+              <tr>
+                <td><code>pageType</code></td>
+                <td>DIMENSION</td>
+                <td>Canonical Touchpoint 전 source vocabulary 보존</td>
+              </tr>
+              <tr>
+                <td><code>purchasedCategory</code></td>
+                <td>DIMENSION</td>
+                <td>Reporting category와 역할을 구분하되 별도 Product Object는 만들지 않음</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>POC에서는 왜 13개인가</h3>
+        <p>
+          Synthetic POC는 Currency와 <code>usesDefaultCurrency</code>를 제외하고, source에서 직접
+          확인된 두 traffic count <code>impressionCount</code>와 <code>clickCount</code>를 MEASURE로
+          추가한다. 따라서 <code>Market 1 + Retailer 2 + Observation 10 = 13</code>이다.
+          두 값은 fixture 범위에서만 합산 가능하며 universal KPI 정의로 승격되지 않는다.
+        </p>
+
+        <div class="callout warning">
+          <strong>왜 54개 source field를 모두 Property로 노출하지 않는가:</strong>
+          최소 release의 목적은 source evidence 조회와 품질 감사다. 모든 physical column을
+          wildcard로 노출하면 검토되지 않은 Metric 의미, 민감한 locator, 임의 join key가
+          ontology surface로 새어 나온다. 따라서 명시적으로 채택한 closed Property만 반환한다.
+        </div>
+      </section>
+
+      <section id="measure-ownership">
+        <p class="section-kicker">Measure ownership</p>
+        <h2>Sell-out·ROAS 값은 “그 값을 관측한 Object”의 Property다</h2>
+        <div class="summary-box">
+          <strong>핵심 답:</strong>
+          실제 Measure 값은 해당 값의 정확한 기간·Retailer·제품 범위·귀속 범위·출처를
+          소유하는 typed Observation Object의 Property가 된다. <code>Retailer</code>,
+          <code>Market</code>, <code>Product</code>는 관측 맥락을 Link로 제공하지만, 시간에 따라
+          바뀌는 실적값을 자신의 Property로 소유하지 않는다.
+        </div>
+
+        <h3>의미 계약·물리 mapping·실제 값을 분리한다</h3>
+        <div class="architecture" aria-label="Metric 의미에서 Observation Property 값으로 연결되는 3단계">
+          <article class="lane">
+            <h3>MetricDefinition · Variant</h3>
+            <p><code>roas.allTv.gross</code>처럼 무엇을 어떤 qualifier로 측정하는지 정의한다.</p>
+            <p><strong>역할:</strong> 업무 의미 계약</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="lane">
+            <h3>PropertyMetricExposure · SourceMetricMapping</h3>
+            <p>Variant를 특정 Object Property에 노출하고 source field·Grain·scale·lineage에 연결한다.</p>
+            <p><strong>역할:</strong> 검증된 exposure·mapping 계약</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="lane">
+            <h3>Observation Property</h3>
+            <p>특정 기간·Retailer·Grain에서 관측된 <code>985000000</code>, <code>4.32</code> 같은 실제 값이다.</p>
+            <p><strong>역할:</strong> typed instance value</p>
+          </article>
+        </div>
+        <p>
+          따라서 <code>roas</code>나 <code>paidSelloutAmount</code>라는 이름이 Metric Registry에
+          있다고 해서 실제 값이 Object 없이 존재하는 것은 아니다. Registry는 의미를,
+          Property exposure·source mapping은 연결을, Observation Property는 실제 값을 각각 소유한다.
+        </p>
+
+        <h3>Measure별 Object 소유 규칙</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Measure / 값의 종류</th>
+                <th>값을 소유할 Object Type</th>
+                <th>표현</th>
+                <th>현재 계약·제한</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>paidSelloutQuantity.*.actual</code></td>
+                <td><code>PaidSelloutObservation</code></td>
+                <td>Quantity MEASURE Property</td>
+                <td>COUNT. 정확한 Variant·business Grain·source mapping 승인 전이므로 <span class="status blocked-status">BLOCKED</span></td>
+              </tr>
+              <tr>
+                <td><code>paidSelloutAmount.*.actual</code></td>
+                <td><code>PaidSelloutObservation</code></td>
+                <td>Amount MEASURE Property</td>
+                <td>Market의 기본 Currency를 Link 경로로 상속. Grain·mapping 승인 전 <span class="status blocked-status">BLOCKED</span></td>
+              </tr>
+              <tr>
+                <td><code>totalSellout.*</code></td>
+                <td><code>TotalSelloutObservation</code></td>
+                <td>Source-value MEASURE Property</td>
+                <td>Paid Sell-out과 분리. Property key와 단위는 D-017 결정 전이므로 <span class="status blocked-status">BLOCKED</span></td>
+              </tr>
+              <tr>
+                <td><code>roas.*</code> source-provided value</td>
+                <td><code>OnsiteEfficiencyObservation</code></td>
+                <td>비가산 MEASURE Property</td>
+                <td>Exact Variant·source Grain에서만 passthrough. Property key·scale·physical mapping은 <span class="status blocked-status">BLOCKED</span></td>
+              </tr>
+              <tr>
+                <td>재계산 ROAS</td>
+                <td>원천 Object Property 소유자 없음</td>
+                <td><code>Function / CalculationPolicy</code> 결과</td>
+                <td>승인된 numerator·denominator·scale·attribution 정책 없이 실행 금지</td>
+              </tr>
+              <tr>
+                <td>Sell-out target</td>
+                <td><code>MetricTargetLine</code></td>
+                <td>Target value Property + typed Metric Variant reference</td>
+                <td>실제 관측값과 수명주기가 다르므로 actual Observation에 혼합하지 않음</td>
+              </tr>
+              <tr>
+                <td>목표 달성률·estimated progress</td>
+                <td>기본적으로 영속 Object 소유자 없음</td>
+                <td><code>Function / CalculationPolicy</code> DERIVED 결과</td>
+                <td>별도 lineage·policy version 계약으로 materialize하기 전에는 actual Property가 아님</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>비POC full-scope Object를 개념적으로 보면</h3>
+        <div class="card-grid three" aria-label="Sell-out과 ROAS Measure를 소유하는 full-scope Observation Object 도식">
+          <article class="card">
+            <h3><code>PaidSelloutObservation</code></h3>
+            <p><strong>Properties</strong><br><code>paidSelloutQuantity</code><br><code>paidSelloutAmount</code></p>
+            <p><strong>Candidate Grain</strong><br>week · retailer · metric variant</p>
+            <p><strong>Typed Links</strong><br><code>paidSelloutObservedForRetailer</code><br><code>paidSelloutObservedInPeriod</code><br><code>paidSelloutMatchedByScope</code><br><code>paidSelloutLoadedFromSnapshot</code></p>
+            <span class="status blocked-status">FULL-SCOPE BLOCKED</span>
+          </article>
+          <article class="card">
+            <h3><code>OnsiteEfficiencyObservation</code></h3>
+            <p><strong>Property</strong><br><code>[ROAS source value — key TBD]</code></p>
+            <p><strong>Candidate Grain</strong><br>week · retailer · variant</p>
+            <p><strong>Typed Links</strong><br><code>efficiencyObservedForRetailer</code><br><code>efficiencyObservedInPeriod</code><br><code>efficiencyLoadedFromSnapshot</code></p>
+            <p><strong>Variant axes</strong><br>ProductScope · RevenueBasis · BenchmarkScope</p>
+            <span class="status blocked-status">FULL-SCOPE BLOCKED</span>
+          </article>
+          <article class="card">
+            <h3><code>TotalSelloutObservation</code></h3>
+            <p><strong>Property</strong><br><code>[Total Sell-out value — key/unit TBD]</code></p>
+            <p><strong>Candidate Grain</strong><br>week · market or retailer · variant</p>
+            <p><strong>Typed Links</strong><br><code>totalSelloutObservedInMarket</code><br><code>totalSelloutObservedInPeriod</code><br><code>totalSelloutMeasuredForSalesChannel</code><br><code>totalSelloutLoadedFromSnapshot</code></p>
+            <span class="status blocked-status">FULL-SCOPE BLOCKED</span>
+          </article>
+        </div>
+
+        <div class="callout warning">
+          <strong>위 Property 이름은 활성 완료 표시가 아니다:</strong>
+          Paid Sell-out은 현재 Metric key에서 개념적 value name을 제시할 수 있지만,
+          Object Property binding은 아직 승인되지 않았다. ROAS와 Total Sell-out은 정확한 Property key·unit·scale까지
+          미정이므로 도식에 <code>TBD</code>를 명시했다.
+        </div>
+
+        <h3>ROAS는 “원천 값”과 “재계산 값”의 소유 경계가 다르다</h3>
+        <div class="card-grid">
+          <article class="card">
+            <h3>Source-provided path</h3>
+            <p><code>OnsiteEfficiencyObservation</code>의 비가산 Property로 보존하고, exact Variant·source contract·snapshot·scale 상태·Grain을 함께 반환한다.</p>
+            <p><strong>허용:</strong> 승인된 exact mapping이 있을 때 동일 source Grain passthrough·비교.</p>
+            <p><strong>금지:</strong> 주간 ROAS 합계·단순평균, generic Variant 자동 선택, benchmark 재구성.</p>
+          </article>
+          <article class="card">
+            <h3>Recomputed path</h3>
+            <p>Observation의 원천 Property가 아니라 승인된 versioned <code>CalculationPolicy</code>를 실행한 Function 결과다.</p>
+            <p><strong>필수:</strong> numerator·denominator·ProductScope·attribution window·return/cancel·currency·scale·null/zero 규칙.</p>
+            <p><strong>현재:</strong> D-003·D-015가 OPEN이므로 <span class="status blocked-status">ROAS_RECALCULATION BLOCKED</span></p>
+          </article>
+        </div>
+
+        <div class="callout blocked">
+          <strong>현재 release 경계:</strong>
+          canonical 최소 v0.3은 Base Metric 0개·Metric Variant 0개이며,
+          <code>WeeklyEcommerceOverviewObservation</code>은 source-evidence 조회용이다.
+          Sell-out과 ROAS를 이 Object에 임시로 몰아넣지 않는다. 위 세 typed Observation은
+          full-scope 목표 모델의 소유 위치를 설명하지만 source Grain·identity·mapping·unit·scale
+          evidence가 승인될 때까지 실행 surface에서 <span class="status blocked-status">BLOCKED</span>다.
+        </div>
+      </section>
+
+      <section id="link">
+        <p class="section-kicker">Element 04</p>
+        <h2><span class="number">4</span>Link — Object 사이의 역할이 있는 관계</h2>
+        <p>
+          Link는 단순 foreign key나 같은 문자열의 일치가 아니다. “누가 누구와 어떤 역할로 연결되는지”,
+          “한쪽에서 몇 개까지 허용되는지”, “필수인지”, “어떤 mapping 증거로 join하는지”를 함께 정의한다.
+          이 정보가 있어야 agent가 안전하게 탐색하고, fan-out이나 잘못된 label join을 차단할 수 있다.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Link</th>
+                <th>From → To</th>
+                <th>Cardinality</th>
+                <th>왜 필요한가</th>
+                <th>실패 조건</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>operatesIn</code></td>
+                <td>Retailer → Market</td>
+                <td>M:1, required</td>
+                <td>Retailer의 국가 범위를 label이 아니라 canonical 관계로 확정</td>
+                <td>0개·2개 이상 Market, 기간 중 mapping 불일치</td>
+              </tr>
+              <tr>
+                <td><code>usesDefaultCurrency</code></td>
+                <td>Market → Currency</td>
+                <td>M:1, required</td>
+                <td>Market-scoped 값을 명시적 Currency master로 해석</td>
+                <td>승인 mapping 없음, 중복 effective mapping</td>
+              </tr>
+              <tr>
+                <td><code>observedInMarket</code></td>
+                <td>Observation → Market</td>
+                <td>M:1, required</td>
+                <td>관측 row의 시장 provenance를 typed endpoint에 연결</td>
+                <td>Source country와 Market mapping 불일치</td>
+              </tr>
+              <tr>
+                <td><code>measuredAtRetailer</code></td>
+                <td>Observation → Retailer</td>
+                <td>M:1, required</td>
+                <td>관측 row를 승인된 Retailer identity에 연결</td>
+                <td>Label-only join, cross-Market merge, crosswalk 0/N match</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Link가 Property보다 안전한 이유</h3>
+        <div class="card-grid">
+          <article class="card">
+            <h3>문자열 복제 방지</h3>
+            <p>Observation마다 <code>marketName</code>, <code>currencyCode</code>를 복제하면 rename·alias·historical mapping을 일관되게 검증할 수 없다.</p>
+          </article>
+          <article class="card">
+            <h3>경로 일관성 검증</h3>
+            <p><code>Observation.observedInMarket</code>은 <code>measuredAtRetailer → operatesIn</code>으로 도달한 Market과 반드시 같아야 한다.</p>
+          </article>
+          <article class="card">
+            <h3>양방향 탐색</h3>
+            <p>하나의 Link로 Retailer→Market과 Market→Retailer reverse traversal을 제공한다. reverse Link를 중복 생성하지 않는다.</p>
+          </article>
+          <article class="card">
+            <h3>관계 자체의 승격 가능성</h3>
+            <p>관계에 validity·status·approval·배분율이 생기면 Link에 숨기지 않고 relationship Object Type으로 승격한다.</p>
+          </article>
+        </div>
+
+        <p>
+          Synthetic POC의 Link Type은 Currency를 제외한 3개이며, materialization 목표 Link instance는
+          <code>operatesIn 9 + observedInMarket 200 + measuredAtRetailer 200 = 409</code>다.
+          Type 수와 instance 수를 분리해 기록해야 “Link 정의가 있다”와 “실제 관계 graph가 닫혔다”를
+          혼동하지 않는다.
+        </p>
+      </section>
+
+      <section id="function">
+        <p class="section-kicker">Element 05</p>
+        <h2><span class="number">5</span>Function — 상태를 바꾸지 않는 조회·계산 계약</h2>
+        <p>
+          Function은 Object와 Link를 읽어 조회·집계·비교·감사·추론을 수행하지만 업무 상태를
+          변경하지 않는다. LLM이 직접 SQL과 산식을 만들게 하지 않고, 검토된 입력·출력·한도·lineage를
+          가진 named capability만 실행하게 하는 것이 목적이다.
+        </p>
+
+        <h3>Canonical 최소 release의 두 Function</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Function</th>
+                <th>Mode</th>
+                <th>책임</th>
+                <th>왜 이 두 개만 실행 가능한가</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>getWeeklyOverviewRows</code></td>
+                <td>READ_ONLY</td>
+                <td>승인된 Market·Retailer·기간의 source-evidence Observation을 bounded 조회</td>
+                <td>검토된 12 Property·4 Link projection만 반환하며 Metric 해석이 필요 없다.</td>
+              </tr>
+              <tr>
+                <td><code>auditWeeklyOverviewQuality</code></td>
+                <td>COMPUTE</td>
+                <td>같은 범위의 identity·mapping·schema·Grain 품질을 side-effect 없이 감사</td>
+                <td>읽기 기반 품질 검증이며 workflow나 source를 변경하지 않는다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Function 경계가 강한 이유</h3>
+        <ul class="reason-list">
+          <li><code>countryCode</code>, <code>retailerId</code>, 반개방 <code>period</code>를 required input으로 고정한다.</li>
+          <li>최대 기간·row·scan byte·timeout으로 읽기 비용을 bounded한다.</li>
+          <li>호출자가 table·column·Function·Link key 또는 자유 SQL identifier를 주입하지 못하게 한다.</li>
+          <li>출력은 closed schema이며 raw 54-field wildcard, 임의 집계, dedup, latest-row 선택을 금지한다.</li>
+          <li>정의된 Function과 model-visible Tool을 분리해 DRAFT·BLOCKED capability를 노출하지 않는다.</li>
+        </ul>
+
+        <h3>Synthetic POC의 세 Function은 무엇이 다른가</h3>
+        <div class="card-grid three">
+          <article class="card">
+            <h3><code>summarizeWeeklyTraffic</code></h3>
+            <p>선택된 Market·Retailer와 기간에 대해 impression·click 합계, row count, 중복 Grain disclosure를 반환한다.</p>
+          </article>
+          <article class="card">
+            <h3><code>compareWeeklyTrafficContributions</code></h3>
+            <p>두 기간의 변화와 dimension별 contribution을 비교하되 인과 원인으로 표현하지 않는다.</p>
+          </article>
+          <article class="card">
+            <h3><code>auditWeeklyTrafficLineage</code></h3>
+            <p>전체 frozen profile의 schema·identity·관계·lineage와 production blocker를 감사한다.</p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>Resolver operation은 Function이 아니다:</strong>
+          <code>discoverObjectTypes</code>, <code>discoverObjectInstances</code>,
+          <code>selectObjectScope</code>는 query-planning control plane의 내부 operation이다.
+          업무 데이터를 계산하는 Registry Function이나 public Tool로 세지 않는다. 이 구분은
+          탐색 권한과 domain 계산 권한을 분리한다.
+        </div>
+
+        <p>
+          Full catalog의 <code>summarizeWeeklyPerformance</code>,
+          <code>compareWeeklyPerformance</code>, <code>rankPerformanceContributionDrivers</code>는
+          Metric·calendar·독립 Dimension 근거가 부족해 <span class="status blocked-status">BLOCKED</span>다.
+          LLM이 raw 조회와 자체 계산으로 이 blocker를 우회해서는 안 된다.
+        </p>
+      </section>
+
+      <section id="action">
+        <p class="section-kicker">Element 06</p>
+        <h2><span class="number">6</span>Action — 권한과 감사를 거친 상태 변경</h2>
+        <p>
+          Action은 Object·Link·외부 운영 시스템의 상태를 실제로 바꾸는 명령이다. 조회와 mutation을
+          분리하면 read-only 분석 credential이 write 권한으로 확대되지 않고, 사용자 승인·사전 조건·감사·보상
+          규칙을 별도로 강제할 수 있다.
+        </p>
+
+        <div class="architecture" aria-label="Function과 Action의 경계">
+          <div class="lane">
+            <h3>Function</h3>
+            <p>“DE Amazon의 주간 traffic을 비교해줘.”</p>
+            <p><strong>결과:</strong> 읽기·계산·설명<br><strong>State change:</strong> 0</p>
+          </div>
+          <div class="arrow" aria-hidden="true">≠</div>
+          <div class="lane">
+            <h3>LLM 제안</h3>
+            <p>“이상 변화를 조사하는 것이 좋겠습니다.”</p>
+            <p><strong>결과:</strong> 제안 텍스트<br><strong>State change:</strong> 0</p>
+          </div>
+          <div class="arrow" aria-hidden="true">≠</div>
+          <div class="lane">
+            <h3>Action</h3>
+            <p><code>CreatePerformanceInvestigation</code></p>
+            <p><strong>결과:</strong> workflow row 생성<br><strong>State change:</strong> 1</p>
+          </div>
+        </div>
+
+        <h3>왜 canonical 최소 release의 Action은 0개인가</h3>
+        <ul class="reason-list">
+          <li>현재 source는 read-only BI/DM이며 운영 source-of-truth가 아니다.</li>
+          <li>Action authorization policy와 실행 주체가 준비되지 않았다.</li>
+          <li>Evidence resolver, write binding, audit record, rollback/compensation 계약이 닫히지 않았다.</li>
+          <li>따라서 Action이나 write Tool을 노출하면 문서상 의도를 실제 권한으로 오인하게 된다.</li>
+        </ul>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>향후 후보</th>
+                <th>Target</th>
+                <th>현재 상태</th>
+                <th>실행 전 필수 계약</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CreatePerformanceInvestigation</code></td>
+                <td><code>PerformanceInvestigation</code></td>
+                <td><span class="status proposed">PROPOSED</span> / executable=false</td>
+                <td>Typed input, 대상 Object scope, 사용자 권한, evidence reference, workflow write binding, audit, rollback</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warning">
+          <strong>Action 0은 누락이 아니라 안전 계약이다:</strong>
+          분석 결과가 좋아 보인다는 이유만으로 investigation 생성, 예산 변경, 승인·반려를
+          실행하지 않는다. write authority와 보상 경로가 준비된 후 새 immutable release에서
+          명시적으로 추가해야 한다.
+        </div>
+      </section>
+
+      <section id="together">
+        <p class="section-kicker">End-to-end composition</p>
+        <h2>여섯 요소는 하나의 안전한 업무 문장을 완성한다</h2>
+        <p>예시 질문: <strong>“DE의 Amazon에서 2025년 10월 주간 traffic을 보여줘.”</strong></p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>순서</th>
+                <th>사용 요소</th>
+                <th>해결하는 내용</th>
+                <th>검증 포인트</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Object Type</td>
+                <td>DE는 Market, Amazon은 Retailer, traffic row는 Observation임을 해석</td>
+                <td>Caller-visible type과 reviewed alias만 사용</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Object</td>
+                <td><code>Market.DE</code>와 DE-scoped Amazon UUID를 선택</td>
+                <td>동명 Retailer ambiguity, identity materialization, snapshot freshness</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Link</td>
+                <td>Amazon <code>operatesIn</code> DE인지 확인</td>
+                <td>0/N match, cross-Market label merge, path mismatch 거부</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Property</td>
+                <td>기간, impressionCount, clickCount와 provenance projection 결정</td>
+                <td>Closed allowlist, type, null, numeric boundary</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>Function</td>
+                <td>호환되는 summary Function을 선택해 bounded read 실행</td>
+                <td>권한, 기간 한도, lineage, no-dedup disclosure</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td>Action</td>
+                <td>현재는 없음. 분석 결과를 읽기 응답으로만 종료</td>
+                <td>Mutation·write credential·workflow 변경 exact 0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          이 구조에서 agent는 source table 이름이나 physical column을 직접 고르지 않는다.
+          먼저 identity와 Link가 검증된 <code>ResolvedObjectScope</code>를 만들고, 그 scope와
+          호환되는 Function만 노출한다. Action이 필요한 요청은 별도 authorization boundary로 넘긴다.
+        </p>
+      </section>
+
+      <section id="decision">
+        <p class="section-kicker">Modeling decision guide</p>
+        <h2>새 개념이 들어올 때 어디에 배치할지 판단하는 기준</h2>
+        <div class="decision-tree">
+          <div class="decision"><b>독립적이고 안정적인 identity가 필요한가?</b><br>예 → Object Type 후보. 아니오 → Property 또는 계산 결과 검토.</div>
+          <div class="decision"><b>타입에 속하는 특정 실재 대상을 가리키는가?</b><br>예 → Object. 타입 정의만 있다면 Object가 존재한다고 주장하지 않는다.</div>
+          <div class="decision"><b>문자열·숫자·날짜·상태·분류 같은 값인가?</b><br>예 → Property. 별도 lifecycle·권한·관계가 생길 때만 Object Type 승격.</div>
+          <div class="decision"><b>다른 Object를 반복 참조하고 역할·cardinality가 중요한가?</b><br>예 → Link. 관계 자체에 상태가 있으면 relationship Object Type 검토.</div>
+          <div class="decision"><b>조회·필터·집계·비교·감사·추론인가?</b><br>예 → Function. 입력·출력·한도·lineage를 closed contract로 정의.</div>
+          <div class="decision"><b>업무나 외부 시스템 상태를 변경하는가?</b><br>예 → Action. 권한·사전조건·감사·rollback 없이 실행 금지.</div>
+        </div>
+
+        <h3>이 설계가 피하는 안티패턴</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>안티패턴</th>
+                <th>왜 위험한가</th>
+                <th>현재 설계의 대응</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>테이블 하나를 Object Type 하나로 복사</td>
+                <td>BI export 구조가 업무 reality를 왜곡</td>
+                <td>Entity·Observation·Reference를 논리적으로 분리</td>
+              </tr>
+              <tr>
+                <td>이름을 Primary Key로 사용</td>
+                <td>rename·동명·국가 간 충돌</td>
+                <td><code>retailerId</code>와 <code>retailerName</code> 분리</td>
+              </tr>
+              <tr>
+                <td>모든 source column을 Property로 공개</td>
+                <td>검토되지 않은 의미·보안·비용 노출</td>
+                <td>12개 canonical closed Property surface</td>
+              </tr>
+              <tr>
+                <td>관계를 문자열 Property로 복제</td>
+                <td>Orphan·fan-out·잘못된 join</td>
+                <td>Required typed Link와 consistency rule</td>
+              </tr>
+              <tr>
+                <td>조회와 상태 변경을 모두 Function으로 처리</td>
+                <td>Read credential이 mutation authority로 확대</td>
+                <td>Function/Action 엄격 분리, Action 0</td>
+              </tr>
+              <tr>
+                <td>관측값의 contribution을 원인으로 표현</td>
+                <td>근거 없는 인과 판단</td>
+                <td>최대 <code>CONTRIBUTION_DRIVER</code> 수준으로 제한</td>
+              </tr>
+              <tr>
+                <td>Type 정의를 Object population으로 오인</td>
+                <td>없는 master·identity·runtime을 있다고 주장</td>
+                <td>계약·materialization·runtime 상태를 별도 축으로 관리</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="status">
+        <p class="section-kicker">Readiness</p>
+        <h2>현재 “설계됨”과 “실행됨”은 다르다</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>층</th>
+                <th>현재 상태</th>
+                <th>확인된 것</th>
+                <th>아직 없는 것</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Canonical 모델 계약</td>
+                <td><span class="status confirmed">DOCUMENTED</span></td>
+                <td>4 Object Type·12 Property·4 Link·2 Function·0 Action의 exact closure</td>
+                <td>Registry seed와 runtime binding</td>
+              </tr>
+              <tr>
+                <td>Production Object population</td>
+                <td><span class="status blocked-status">BLOCKED</span></td>
+                <td>Identity·mapping 의미 계약</td>
+                <td>Immutable source snapshot, stable row identity, Currency/Retailer master와 crosswalk</td>
+              </tr>
+              <tr>
+                <td>Synthetic POC 계약</td>
+                <td><span class="status confirmed">CONTRACT READY</span></td>
+                <td>3 Object Type·214 Object target·409 Link instance target·3 Function</td>
+                <td>Persisted ordinal capture와 actual materialized discovery binding</td>
+              </tr>
+              <tr>
+                <td>Object resolver runtime</td>
+                <td><span class="status not-run">NOT RUN</span></td>
+                <td>Discovery·selection·scope schema와 acceptance 계약</td>
+                <td>실제 resolver execution evidence</td>
+              </tr>
+              <tr>
+                <td>Action runtime</td>
+                <td><span class="status blocked-status">DISABLED</span></td>
+                <td><code>CreatePerformanceInvestigation</code> 의도만 PROPOSED</td>
+                <td>Authorization, Action service, write binding, audit, rollback</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout blocked">
+          <strong>따라서 현재의 정확한 표현:</strong>
+          “Object Type과 여섯 요소의 계약은 설계되었지만 production Object population과
+          실행 surface는 활성화되지 않았다.” Synthetic POC의 sample Object는 fixture evidence이며
+          production 업무 사실이나 운영 master가 아니다.
+        </div>
+      </section>
+
+      <section id="review">
+        <p class="section-kicker">Objective review</p>
+        <h2>성능·보안·확장성 관점의 객관적 검토</h2>
+        <div class="card-grid three">
+          <article class="card">
+            <h3>성능</h3>
+            <p><strong>장점:</strong> closed Function과 bounded input으로 scan·row·timeout을 제한하고, Object/Link index를 통해 반복 full-source lookup을 피할 수 있다.</p>
+            <p><strong>주의:</strong> Link traversal과 effective-dated mapping이 늘면 index·pre-aggregation 전략이 필요하다.</p>
+          </article>
+          <article class="card">
+            <h3>보안</h3>
+            <p><strong>장점:</strong> 물리 identifier, 자유 SQL, unscoped enumeration, write credential을 model surface에서 제거한다.</p>
+            <p><strong>주의:</strong> visibility filtering은 discovery 전과 Function 실행 직전에 같은 predicate로 재검증해야 한다.</p>
+          </article>
+          <article class="card">
+            <h3>확장성</h3>
+            <p><strong>장점:</strong> Object Type·Function·Action이 느슨하게 결합돼 새 vertical slice를 immutable version으로 추가할 수 있다.</p>
+            <p><strong>주의:</strong> 모든 분류를 Object Type으로 승격하면 catalog와 crosswalk 운영비가 급증한다.</p>
+          </article>
+        </div>
+
+        <h3>문서 구조에 대한 개선 판단</h3>
+        <p>
+          타입 계약을 <code>ONTOLOGY_MODEL.md</code>에, sample Object와 POC population을
+          <code>SYNTHETIC_POC_PROFILE.md</code>에 분리한 것은 lifecycle과 evidence를 구분하는 데는
+          타당하다. 다만 첫 독자는 Object가 누락됐다고 느끼기 쉽다. 이 HTML은 그 간극을 메우기 위해
+          type-level 계약, instance 예시, materialization 상태와 실행 흐름을 한 화면에 연결한다.
+        </p>
+      </section>
+
+      <section id="sources">
+        <p class="section-kicker">Traceability</p>
+        <h2>근거 문서와 읽는 순서</h2>
+        <ol class="source-list">
+          <li><a href="ONTOLOGY_MODEL.md"><strong>ONTOLOGY_MODEL.md</strong></a> — canonical Object Type·Property·Identity·Grain·Link 정본</li>
+          <li><a href="ANALYTICAL_SEMANTICS.md"><strong>ANALYTICAL_SEMANTICS.md</strong></a> — Function·Action과 분석 의미 경계</li>
+          <li><a href="READ_ONLY_ACTIVATION_PROFILE.md"><strong>READ_ONLY_ACTIVATION_PROFILE.md</strong></a> — 최소 4/12/4/2/0 실행 surface와 보안 한도</li>
+          <li><a href="SYNTHETIC_POC_PROFILE.md"><strong>SYNTHETIC_POC_PROFILE.md</strong></a> — sample Object, 3/13/3/3/0 POC, 214 Object·409 Link instance 목표</li>
+          <li><a href="SYNTHETIC_POC_OBJECT_RESOLUTION.md"><strong>SYNTHETIC_POC_OBJECT_RESOLUTION.md</strong></a> — Object Type·Object 탐색, 선택, ResolvedObjectScope 계약</li>
+          <li><a href="SOURCE_READINESS_AUDIT.md"><strong>SOURCE_READINESS_AUDIT.md</strong></a> — production source·identity·master blocker 근거</li>
+          <li><a href="REGISTRY_ACTIVATION.md"><strong>REGISTRY_ACTIVATION.md</strong></a> — DRAFT→ACTIVE gate와 runtime evidence 요구사항</li>
+          <li><a href="D003_D015_ROAS_SEMANTICS.md"><strong>D003_D015_ROAS_SEMANTICS.md</strong></a> — source-provided ROAS·recomputation·Variant·roll-up 경계</li>
+          <li><a href="../weekly_ecommerce_domain_ontology_design_v0.3.md"><strong>weekly_ecommerce_domain_ontology_design_v0.3.md</strong></a> — full-scope Observation·Metric Variant·Calculation Policy 정본</li>
+          <li><a href="V03_SYNTHETIC_POC_ONTOLOGY_DESIGN.json"><strong>V03_SYNTHETIC_POC_ONTOLOGY_DESIGN.json</strong></a> — machine-readable POC Object Type·Object sample·Property·Link·Function·Action 계약</li>
+        </ol>
+        <p>
+          이 HTML은 설명용 projection이다. 이름·수치·상태가 충돌할 경우 위 정본 Markdown과
+          machine-readable JSON, Registry activation evidence를 우선한다.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <p><strong>Weekly E-commerce v0.3 Ontology — Six Elements Explained</strong></p>
+    <p>설명 문서 · 기준일 2026-08-02 · production activation을 주장하지 않음</p>
+    <p><a href="#answer">문서 처음으로</a></p>
+  </footer>
+</body>
+</html>
