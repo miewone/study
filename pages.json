@@ -15,6 +15,14 @@
       "tags": ["온톨로지", "데이터 매핑", "런타임 조회"],
       "path": "./ontology/ONTOLOGY_OBJECT_DATA_BINDING_AND_QUERY.html",
       "updatedAt": "2026-08-03"
+    },
+    {
+      "title": "질의가 Object를 만나 Function이 되기까지",
+      "description": "자연어 의도를 구조화된 Object 탐색 요청과 고정 Function Tool 호출로 변환하는 흐름을 설명합니다.",
+      "category": "Ontology",
+      "tags": ["온톨로지", "Object 탐색", "Function Tool"],
+      "path": "./ontology/P062_QUERY_OBJECT_FUNCTION_FLOW.html",
+      "updatedAt": "2026-08-12"
     }
   ]
 }

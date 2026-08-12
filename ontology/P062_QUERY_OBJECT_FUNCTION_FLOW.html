@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="P0-062에서 구조화 질의가 Object 선택과 ResolvedObjectScope를 거쳐 세 Function으로 실행되는 과정을 설명하는 시각 문서">
+  <title>P0-062 — 질의에서 Object 선택과 Function 실행까지</title>
+  <style>
+    :root {
+      --navy: #12344d;
+      --navy-2: #1d5265;
+      --teal: #087f75;
+      --teal-soft: #dff4ef;
+      --blue: #2a6f97;
+      --blue-soft: #e7f0f7;
+      --amber: #b7791f;
+      --amber-soft: #fff3ce;
+      --coral: #c65f46;
+      --coral-soft: #ffebe4;
+      --green: #277a51;
+      --green-soft: #e3f3e9;
+      --red: #a63e36;
+      --red-soft: #fbe6e4;
+      --ink: #1d2a32;
+      --muted: #60707a;
+      --line: #d7ddd9;
+      --paper: #f4f0e7;
+      --surface: rgba(255, 255, 255, 0.88);
+      --white: #fff;
+      --shadow: 0 18px 46px rgba(18, 52, 77, 0.1);
+      --radius: 22px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, Pretendard, "Noto Sans KR", "Noto Sans CJK KR", "Nanum Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 92% 0%, rgba(8, 127, 117, 0.14), transparent 28rem),
+        linear-gradient(180deg, #faf8f2 0%, var(--paper) 100%);
+      font-family: var(--sans);
+      line-height: 1.68;
+    }
+    a { color: var(--teal); text-underline-offset: 0.18em; }
+    code {
+      padding: 0.12rem 0.36rem;
+      border-radius: 0.4rem;
+      color: #144c61;
+      background: #e8f0f3;
+      font-family: var(--mono);
+      font-size: 0.88em;
+      overflow-wrap: anywhere;
+    }
+    .skip-link {
+      position: fixed;
+      top: -5rem;
+      left: 1rem;
+      z-index: 100;
+      padding: 0.7rem 1rem;
+      color: white;
+      background: var(--navy);
+    }
+    .skip-link:focus { top: 1rem; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(3.8rem, 8vw, 7rem) 1.5rem 4rem;
+      color: white;
+      background: linear-gradient(125deg, #0e2c43, #18586a 58%, #0c8178);
+    }
+    .hero::after {
+      position: absolute;
+      right: -10rem;
+      bottom: -15rem;
+      width: 42rem;
+      height: 42rem;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 50%;
+      box-shadow: 0 0 0 5rem rgba(255,255,255,.025), 0 0 0 10rem rgba(255,255,255,.018);
+      content: "";
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      width: min(1140px, 100%);
+      margin: 0 auto;
+    }
+    .eyebrow, .section-kicker {
+      margin: 0 0 0.65rem;
+      color: #8fe1d2;
+      font-size: 0.76rem;
+      font-weight: 850;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 920px;
+      margin: 0;
+      font-size: clamp(2.5rem, 6vw, 5.4rem);
+      line-height: 1.04;
+      letter-spacing: -.052em;
+    }
+    .lead {
+      max-width: 850px;
+      margin: 1.35rem 0 0;
+      color: rgba(255,255,255,.88);
+      font-size: clamp(1rem, 2vw, 1.25rem);
+    }
+    .hero-pills { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.6rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: .3rem .66rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: .72rem;
+      font-weight: 800;
+    }
+    .pill { border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.08); }
+    .tag { color: var(--navy); background: var(--blue-soft); }
+    .tag.green { color: var(--green); background: var(--green-soft); }
+    .tag.amber { color: #82530d; background: var(--amber-soft); }
+    .tag.red { color: var(--red); background: var(--red-soft); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 2rem;
+      width: min(1260px, calc(100% - 2rem));
+      margin: 2rem auto 5rem;
+    }
+    .side-nav {
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      padding: 1.15rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.9);
+      box-shadow: var(--shadow);
+    }
+    .side-nav strong {
+      display: block;
+      margin-bottom: .7rem;
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .side-nav a {
+      display: block;
+      padding: .45rem .52rem;
+      border-radius: .55rem;
+      color: var(--ink);
+      font-size: .82rem;
+      text-decoration: none;
+    }
+    .side-nav a:hover, .side-nav a:focus { color: var(--navy); background: var(--blue-soft); }
+    main { min-width: 0; }
+    section {
+      margin-bottom: 2rem;
+      padding: clamp(1.3rem, 3vw, 2.35rem);
+      border: 1px solid rgba(215,221,217,.95);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: 0 9px 30px rgba(18,52,77,.06);
+      scroll-margin-top: 1rem;
+    }
+    .section-kicker { color: var(--teal); }
+    h2 { margin: 0 0 .8rem; font-size: clamp(1.65rem, 3vw, 2.45rem); line-height: 1.14; letter-spacing: -.03em; }
+    h3 { margin: 0 0 .55rem; font-size: 1.05rem; }
+    p { margin: .5rem 0 1rem; }
+    .muted { color: var(--muted); }
+    .note {
+      padding: 1rem 1.1rem;
+      border-left: 4px solid var(--amber);
+      border-radius: 0 14px 14px 0;
+      background: var(--amber-soft);
+    }
+    .callout {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: .9rem;
+      align-items: start;
+      padding: 1rem 1.1rem;
+      border: 1px solid #b9ddd5;
+      border-radius: 16px;
+      background: var(--teal-soft);
+    }
+    .callout .num {
+      display: grid;
+      width: 2rem;
+      height: 2rem;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: var(--teal);
+      font-weight: 900;
+    }
+
+    .diagram-shell {
+      overflow-x: auto;
+      margin-top: 1.2rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fffdfa;
+    }
+    .diagram-shell svg { display: block; min-width: 820px; width: 100%; height: auto; }
+    .diagram-shell text { font-family: var(--sans); }
+    .diagram-title { fill: var(--navy); font-size: 15px; font-weight: 850; }
+    .diagram-text { fill: var(--ink); font-size: 12px; }
+    .diagram-small { fill: var(--muted); font-size: 10.5px; }
+    .svg-node { fill: white; stroke: #bfd0d4; stroke-width: 1.4; }
+    .svg-node.query { fill: var(--blue-soft); stroke: #8fb4cc; }
+    .svg-node.object { fill: var(--teal-soft); stroke: #79bfb3; }
+    .svg-node.scope { fill: var(--amber-soft); stroke: #dab96c; }
+    .svg-node.function { fill: var(--green-soft); stroke: #82ba98; }
+    .svg-node.output { fill: #f3e9fa; stroke: #b99ace; }
+    .svg-arrow { fill: none; stroke: #5b7887; stroke-width: 2; marker-end: url(#arrow); }
+    .svg-arrow.dashed { stroke-dasharray: 7 5; }
+    .svg-label { fill: var(--teal); font-size: 10.5px; font-weight: 800; }
+
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.1rem; }
+    .card { padding: 1.15rem; border: 1px solid var(--line); border-radius: 17px; background: white; }
+    .card p:last-child { margin-bottom: 0; }
+    .card.selected { border-color: #7bbdb2; box-shadow: inset 0 0 0 1px #7bbdb2; }
+    .card.warning { border-color: #e3be72; background: #fffaf0; }
+    .candidate-list { display: grid; gap: .55rem; margin-top: .8rem; }
+    .candidate {
+      display: flex;
+      justify-content: space-between;
+      gap: .8rem;
+      padding: .66rem .75rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfb;
+    }
+    .candidate.chosen { border-color: #65aa9f; color: #075f58; background: var(--teal-soft); font-weight: 800; }
+
+    .object-map {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1.15fr;
+      gap: .8rem;
+      align-items: center;
+      margin-top: 1.1rem;
+    }
+    .object-box { min-height: 155px; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: white; }
+    .object-box.market { border-top: 5px solid var(--blue); }
+    .object-box.retailer { border-top: 5px solid var(--teal); }
+    .object-box.scope { border-top: 5px solid var(--amber); background: #fffdf5; }
+    .connector { color: var(--muted); font-size: 1.7rem; font-weight: 900; text-align: center; }
+    .kv { display: grid; grid-template-columns: auto minmax(0,1fr); gap: .25rem .6rem; margin: .7rem 0 0; font-size: .82rem; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; overflow-wrap: anywhere; font-family: var(--mono); }
+
+    .function-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; margin-top: 1.1rem; }
+    .function-card { position: relative; overflow: hidden; padding: 1.2rem; border: 1px solid var(--line); border-radius: 18px; background: white; }
+    .function-card::before { position: absolute; inset: 0 0 auto; height: 5px; content: ""; background: var(--teal); }
+    .function-card:nth-child(2)::before { background: var(--blue); }
+    .function-card:nth-child(3)::before { background: var(--amber); }
+    .request-box { margin: .8rem 0; padding: .8rem; border-radius: 12px; background: #f1f5f5; font-family: var(--mono); font-size: .75rem; overflow-wrap: anywhere; }
+    .metric-row { display: flex; justify-content: space-between; gap: .8rem; padding: .35rem 0; border-bottom: 1px dashed var(--line); font-size: .84rem; }
+    .metric-row:last-child { border-bottom: 0; }
+    .metric-row strong { font-family: var(--mono); }
+
+    .timeline { position: relative; display: grid; gap: .8rem; margin-top: 1.2rem; padding-left: 1.8rem; }
+    .timeline::before { position: absolute; top: .3rem; bottom: .3rem; left: .55rem; width: 3px; border-radius: 3px; content: ""; background: #b6d7d1; }
+    .timeline-item { position: relative; padding: .85rem 1rem; border: 1px solid var(--line); border-radius: 14px; background: white; }
+    .timeline-item::before { position: absolute; left: -1.68rem; top: 1.15rem; width: .85rem; height: .85rem; border: 3px solid white; border-radius: 50%; content: ""; background: var(--teal); box-shadow: 0 0 0 2px #87bfb6; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: .85rem; }
+    th, td { padding: .7rem .65rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--navy); background: #edf3f4; }
+    td.num, th.num { text-align: right; font-family: var(--mono); }
+    .table-scroll { overflow-x: auto; }
+    .boundary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .boundary { padding: 1rem; border-radius: 16px; }
+    .boundary.real { border: 1px solid #8bc1a0; background: var(--green-soft); }
+    .boundary.not-live { border: 1px solid #dfb76c; background: var(--amber-soft); }
+    .boundary ul { margin: .6rem 0 0; padding-left: 1.2rem; }
+    footer { padding: 1.5rem; color: var(--muted); text-align: center; font-size: .8rem; }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .side-nav { position: static; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .side-nav strong { grid-column: 1 / -1; }
+      .cards, .function-grid { grid-template-columns: 1fr; }
+      .object-map { grid-template-columns: 1fr; }
+      .connector { transform: rotate(90deg); }
+    }
+    @media (max-width: 640px) {
+      .hero { padding-top: 3.2rem; }
+      .layout { width: min(100% - 1rem, 1260px); gap: 1rem; }
+      section { padding: 1.1rem; border-radius: 18px; }
+      .boundary-grid { grid-template-columns: 1fr; }
+      table { min-width: 680px; }
+    }
+    @media print {
+      body { background: white; }
+      .hero { color: var(--ink); background: white; padding: 1rem 0; }
+      .hero .lead { color: var(--ink); }
+      .side-nav { display: none; }
+      .layout { display: block; width: 100%; margin: 0; }
+      section { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 이동</a>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">P0-062 visual walkthrough</p>
+      <h1>질의가 Object를 만나<br>Function이 되기까지</h1>
+      <p class="lead">CA의 Amazon 트래픽을 묻는 의도가 어떻게 Market과 Retailer 후보를 찾고, 모호성을 해소해 신뢰된 Scope를 만든 뒤, 세 Function의 실제 계산으로 이어졌는지 한 장씩 따라갑니다.</p>
+      <div class="hero-pills" aria-label="문서 범위">
+        <span class="pill">fresh PostgreSQL 16</span>
+        <span class="pill">CA / Amazon</span>
+        <span class="pill">Object resolution</span>
+        <span class="pill">ADK exact 3 Tools</span>
+        <span class="pill">cleanup retained 0</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="side-nav" aria-label="페이지 목차">
+      <strong>Walkthrough</strong>
+      <a href="#one-screen">1. 한 화면 요약</a>
+      <a href="#query">2. 어떤 질의였나</a>
+      <a href="#selection">3. Object 선택</a>
+      <a href="#scope">4. Scope 봉인</a>
+      <a href="#functions">5. Function 실행</a>
+      <a href="#results">6. 실제 결과</a>
+      <a href="#guardrails">7. 보안 경계</a>
+      <a href="#sources">8. 정본 근거</a>
+    </nav>
+
+    <main id="main">
+      <section id="one-screen">
+        <p class="section-kicker">01 · one screen</p>
+        <h2>전체 과정은 이렇습니다</h2>
+        <p>자연어를 임의로 해석한 것이 아니라, 자연어 의도를 <strong>구조화된 Object 탐색 요청</strong>과 <strong>고정 Function Tool 호출</strong>로 재현했습니다.</p>
+        <div class="diagram-shell" role="img" aria-label="질의에서 Object 선택, Scope 봉인, Function 실행, 결과까지의 전체 흐름도">
+          <svg viewBox="0 0 1120 330" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b7887"/>
+              </marker>
+            </defs>
+            <rect class="svg-node query" x="20" y="88" rx="16" width="185" height="132"/>
+            <text class="diagram-title" x="112" y="120" text-anchor="middle">구조화 질의</text>
+            <text class="diagram-text" x="112" y="148" text-anchor="middle">Market = CA</text>
+            <text class="diagram-text" x="112" y="169" text-anchor="middle">Retailer = Amazon</text>
+            <text class="diagram-small" x="112" y="198" text-anchor="middle">기간 또는 audit profile</text>
+
+            <rect class="svg-node object" x="250" y="48" rx="16" width="200" height="212"/>
+            <text class="diagram-title" x="350" y="82" text-anchor="middle">Object 탐색</text>
+            <text class="diagram-text" x="350" y="112" text-anchor="middle">Market → CA 1개</text>
+            <text class="diagram-text" x="350" y="138" text-anchor="middle">Amazon → CA / DE / UK</text>
+            <text class="diagram-small" x="350" y="166" text-anchor="middle">NEEDS_CLARIFICATION</text>
+            <rect x="285" y="186" rx="9" width="130" height="42" fill="#fff" stroke="#79bfb3"/>
+            <text class="diagram-text" x="350" y="212" text-anchor="middle">CA Amazon 선택</text>
+
+            <rect class="svg-node scope" x="500" y="68" rx="16" width="205" height="172"/>
+            <text class="diagram-title" x="602" y="102" text-anchor="middle">ResolvedObjectScope</text>
+            <text class="diagram-text" x="602" y="132" text-anchor="middle">Market(CA)</text>
+            <text class="diagram-text" x="602" y="154" text-anchor="middle">Retailer(UUID)</text>
+            <text class="diagram-small" x="602" y="182" text-anchor="middle">operatesIn 링크 검증</text>
+            <text class="diagram-small" x="602" y="203" text-anchor="middle">authority + graph digest 봉인</text>
+
+            <rect class="svg-node function" x="755" y="30" rx="16" width="205" height="250"/>
+            <text class="diagram-title" x="857" y="64" text-anchor="middle">실제 Function</text>
+            <text class="diagram-text" x="857" y="98" text-anchor="middle">주별 요약</text>
+            <text class="diagram-text" x="857" y="128" text-anchor="middle">기간 기여도 비교</text>
+            <text class="diagram-text" x="857" y="158" text-anchor="middle">lineage 감사</text>
+            <line x1="785" y1="182" x2="930" y2="182" stroke="#b9d2c3"/>
+            <text class="diagram-small" x="857" y="208" text-anchor="middle">fresh authorization 1</text>
+            <text class="diagram-small" x="857" y="229" text-anchor="middle">source read 1</text>
+            <text class="diagram-small" x="857" y="250" text-anchor="middle">publish 1</text>
+
+            <rect class="svg-node output" x="1005" y="88" rx="16" width="95" height="132"/>
+            <text class="diagram-title" x="1052" y="122" text-anchor="middle">결과</text>
+            <text class="diagram-text" x="1052" y="153" text-anchor="middle">trend</text>
+            <text class="diagram-text" x="1052" y="176" text-anchor="middle">drivers</text>
+            <text class="diagram-text" x="1052" y="199" text-anchor="middle">audit</text>
+
+            <path class="svg-arrow" d="M205 154 H245"/>
+            <path class="svg-arrow" d="M450 154 H495"/>
+            <path class="svg-arrow" d="M705 154 H750"/>
+            <path class="svg-arrow" d="M960 154 H1000"/>
+            <text class="svg-label" x="225" y="142" text-anchor="middle">discover</text>
+            <text class="svg-label" x="475" y="142" text-anchor="middle">seal</text>
+            <text class="svg-label" x="730" y="142" text-anchor="middle">authorize</text>
+            <text class="svg-label" x="982" y="142" text-anchor="middle">publish</text>
+          </svg>
+        </div>
+        <div class="note"><strong>중요:</strong> Object 이름을 문자열로 Function에 바로 넘기지 않습니다. 후보 검색 → 사용자 선택에 해당하는 clarification → 링크 검증 → content-addressed Scope 봉인을 통과해야 Function이 보입니다.</div>
+      </section>
+
+      <section id="query">
+        <p class="section-kicker">02 · queries</p>
+        <h2>어떤 질의를 실행했나</h2>
+        <p>비즈니스 질문은 세 가지였고, 테스트에서는 이를 다음의 구조화 입력으로 고정했습니다.</p>
+        <div class="cards">
+          <article class="card">
+            <span class="tag green">reader</span>
+            <h3>CA Amazon의 주별 트래픽은?</h3>
+            <p class="muted">요청 기간 안의 impressions와 clicks를 월요일 단위로 합산합니다.</p>
+            <div class="request-box">period<br>2025-09-29 ≤ date &lt; 2026-07-27</div>
+          </article>
+          <article class="card">
+            <span class="tag">reader</span>
+            <h3>전주 대비 무엇이 바뀌었나?</h3>
+            <p class="muted">기준 주와 대상 주의 변화량을 5차원 contribution key별로 설명합니다.</p>
+            <div class="request-box">baseline: 2026-05-04..11<br>target: 2026-05-11..18</div>
+          </article>
+          <article class="card">
+            <span class="tag amber">auditor</span>
+            <h3>전체 frozen 데이터의 lineage는 맞나?</h3>
+            <p class="muted">특정 pair가 아니라 200행 전체 profile과 Object/Link 관계를 검사합니다.</p>
+            <div class="request-box">profileKey<br>V03_SYNTHETIC_TRAFFIC_200_V1</div>
+          </article>
+        </div>
+        <div class="callout" style="margin-top:1rem">
+          <span class="num">!</span>
+          <div><strong>LLM이 Object를 임의 추측하지 않았습니다.</strong><br><span class="muted">Tool 선택은 deterministic fake model이 재현했고, Object 후보·Scope·Function 계산은 실제 resolver와 Strategy가 수행했습니다.</span></div>
+        </div>
+      </section>
+
+      <section id="selection">
+        <p class="section-kicker">03 · object selection</p>
+        <h2>왜 “Amazon”을 바로 선택하지 않았나</h2>
+        <p>Market은 <code>CA</code>로 exact match되지만, Retailer 이름 <code>Amazon</code>은 여러 국가에 존재합니다. 따라서 이름만으로 identity를 만들지 않고 clarification을 요구합니다.</p>
+
+        <div class="object-map" aria-label="Market과 Retailer 선택 관계">
+          <article class="object-box market">
+            <span class="tag">Object Type</span>
+            <h3>Market</h3>
+            <dl class="kv"><dt>query</dt><dd>Market</dd><dt>identity</dt><dd>countryCode</dd><dt>lookup</dt><dd>CA</dd><dt>result</dt><dd>exact 1</dd></dl>
+          </article>
+          <div class="connector" aria-hidden="true">→</div>
+          <article class="object-box retailer">
+            <span class="tag green">Object Type</span>
+            <h3>Retailer</h3>
+            <dl class="kv"><dt>query</dt><dd>Retailer</dd><dt>title</dt><dd>Amazon</dd><dt>identity</dt><dd>retailerId</dd><dt>result</dt><dd>3 candidates</dd></dl>
+          </article>
+          <div class="connector" aria-hidden="true">→</div>
+          <article class="object-box scope">
+            <span class="tag amber">Trusted selection</span>
+            <h3>CA Amazon</h3>
+            <dl class="kv"><dt>market</dt><dd>CA</dd><dt>retailerId</dt><dd>0ad40867-c1b3-597e-ba20-fac9f43a2001</dd><dt>link</dt><dd>operatesIn → CA</dd></dl>
+          </article>
+        </div>
+
+        <div class="cards">
+          <article class="card warning">
+            <span class="tag amber">NEEDS_CLARIFICATION</span>
+            <h3>초기 Amazon 후보</h3>
+            <div class="candidate-list">
+              <div class="candidate chosen"><span>CA · Amazon</span><span>선택</span></div>
+              <div class="candidate"><span>DE · Amazon</span><span>후보</span></div>
+              <div class="candidate"><span>UK · Amazon</span><span>후보</span></div>
+            </div>
+          </article>
+          <article class="card selected">
+            <span class="tag green">LINK CLOSURE</span>
+            <h3>선택 후 검증</h3>
+            <p><code>Retailer(CA Amazon)</code>이 trusted <code>operatesIn</code> 링크로 <code>Market(CA)</code>에 연결되는지 검사합니다.</p>
+            <p class="muted">다른 Market에 연결된 Retailer라면 Function 노출 전에 거부됩니다.</p>
+          </article>
+          <article class="card">
+            <span class="tag">IDENTITY RULE</span>
+            <h3>이름 ≠ identity</h3>
+            <p><code>Amazon</code>은 검색용 title일 뿐입니다. 최종 identity는 국가에 종속된 deterministic UUID입니다.</p>
+          </article>
+        </div>
+
+        <div class="timeline" aria-label="Object selection 단계">
+          <div class="timeline-item"><strong>1. Object Type 검색</strong> — <code>Market</code>, <code>Retailer</code>를 visible catalog에서 찾습니다.</div>
+          <div class="timeline-item"><strong>2. Instance 검색</strong> — <code>CA</code>는 1개, <code>Amazon</code>은 CA/DE/UK 3개를 반환합니다.</div>
+          <div class="timeline-item"><strong>3. Clarification</strong> — 이전 후보 snapshot을 참조해 CA Amazon candidate를 선택합니다.</div>
+          <div class="timeline-item"><strong>4. Graph 검증</strong> — selected Retailer의 <code>operatesIn</code> target이 selected Market과 같은지 확인합니다.</div>
+          <div class="timeline-item"><strong>5. Scope 봉인</strong> — candidate, graph, caller, visibility, version digest를 하나의 immutable Scope로 만듭니다.</div>
+        </div>
+      </section>
+
+      <section id="scope">
+        <p class="section-kicker">04 · trusted scope</p>
+        <h2>Function에 전달되는 것은 문자열 두 개가 아닙니다</h2>
+        <p>선택 결과는 <code>ResolvedObjectScope</code>로 봉인됩니다. Function 실행 직전에 이 Scope와 resolver evidence를 create-only store에서 다시 읽고 전체 digest를 재계산합니다.</p>
+        <div class="diagram-shell" role="img" aria-label="ResolvedObjectScope 내부 구성과 Function 재권한검사 도식">
+          <svg viewBox="0 0 1060 360" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#5b7887"/></marker>
+            </defs>
+            <rect class="svg-node object" x="25" y="40" rx="16" width="250" height="272"/>
+            <text class="diagram-title" x="150" y="75" text-anchor="middle">ResolvedObjectScope</text>
+            <text class="diagram-text" x="52" y="112">• Market identity: CA</text>
+            <text class="diagram-text" x="52" y="139">• Retailer identity: UUID</text>
+            <text class="diagram-text" x="52" y="166">• candidateSetSha256</text>
+            <text class="diagram-text" x="52" y="193">• graphProjectionSha256</text>
+            <text class="diagram-text" x="52" y="220">• authorizationContextSha256</text>
+            <text class="diagram-text" x="52" y="247">• eligibleFunctionKeys</text>
+            <text class="diagram-text" x="52" y="274">• composite version/bundle</text>
+
+            <rect class="svg-node scope" x="355" y="55" rx="16" width="290" height="242"/>
+            <text class="diagram-title" x="500" y="90" text-anchor="middle">Function 실행 전 5중 대조</text>
+            <text class="diagram-text" x="385" y="127">1. scopeRef store lookup</text>
+            <text class="diagram-text" x="385" y="157">2. evidenceRef store lookup</text>
+            <text class="diagram-text" x="385" y="187">3. fresh Registry snapshot</text>
+            <text class="diagram-text" x="385" y="217">4. caller role + visibility</text>
+            <text class="diagram-text" x="385" y="247">5. Function eligibility</text>
+            <text class="diagram-small" x="500" y="275" text-anchor="middle">어느 하나라도 다르면 source read = 0</text>
+
+            <rect class="svg-node function" x="735" y="80" rx="16" width="290" height="192"/>
+            <text class="diagram-title" x="880" y="115" text-anchor="middle">Scope → 내부 요청</text>
+            <text class="diagram-text" x="765" y="153">countryCode: CA</text>
+            <text class="diagram-text" x="765" y="181">retailerId: 0ad40867…</text>
+            <text class="diagram-text" x="765" y="209">+ Function별 기간 인자</text>
+            <text class="diagram-small" x="880" y="242" text-anchor="middle">caller가 identity를 덮어쓸 수 없음</text>
+
+            <path d="M275 176 H350" fill="none" stroke="#5b7887" stroke-width="2" marker-end="url(#arrow2)"/>
+            <path d="M645 176 H730" fill="none" stroke="#5b7887" stroke-width="2" marker-end="url(#arrow2)"/>
+            <text class="svg-label" x="312" y="162" text-anchor="middle">verify</text>
+            <text class="svg-label" x="687" y="162" text-anchor="middle">inject</text>
+          </svg>
+        </div>
+      </section>
+
+      <section id="functions">
+        <p class="section-kicker">05 · functions</p>
+        <h2>선택된 Object로 Function이 어떻게 동작했나</h2>
+        <div class="function-grid">
+          <article class="function-card">
+            <span class="tag green">summarizeWeeklyTraffic</span>
+            <h3>주별 합계와 누락 주 표시</h3>
+            <div class="request-box">CA / retailer UUID<br>2025-09-29 ≤ date &lt; 2026-07-27</div>
+            <p>CA Amazon frozen row만 골라 impressions·clicks를 월요일별로 합산합니다. 중복 row는 삭제하지 않고 합산하며 중복 Grain 수를 별도 기록합니다.</p>
+            <div class="metric-row"><span>읽은 row</span><strong>27</strong></div>
+            <div class="metric-row"><span>관측 주</span><strong>7</strong></div>
+            <div class="metric-row"><span>누락 주</span><strong>36</strong></div>
+          </article>
+          <article class="function-card">
+            <span class="tag">compareWeeklyTrafficContributions</span>
+            <h3>변화량을 driver별 분해</h3>
+            <div class="request-box">baseline: 2026-05-04..11<br>target: 2026-05-11..18</div>
+            <p>두 기간의 합계를 비교하고 product·category·ad type·page type·purchased category 조합별 delta와 기여 비율을 계산합니다.</p>
+            <div class="metric-row"><span>impression delta</span><strong>-402,000</strong></div>
+            <div class="metric-row"><span>click delta</span><strong>-4,800</strong></div>
+            <div class="metric-row"><span>driver key</span><strong>5 fields</strong></div>
+          </article>
+          <article class="function-card">
+            <span class="tag amber">auditWeeklyTrafficLineage</span>
+            <h3>전체 profile 11개 감사</h3>
+            <div class="request-box">V03_SYNTHETIC_TRAFFIC_200_V1<br>scope = FULL_PROFILE</div>
+            <p>특정 CA Amazon pair가 아니라 frozen 200행 전체와 Object 214개·Link 409개·mutation lineage를 독립 fingerprint로 대사합니다.</p>
+            <div class="metric-row"><span>source rows</span><strong>200</strong></div>
+            <div class="metric-row"><span>audit checks</span><strong>11</strong></div>
+            <div class="metric-row"><span>status</span><strong>PASS + BLOCKERS</strong></div>
+          </article>
+        </div>
+
+        <div class="timeline" aria-label="Function 실행 내부 단계">
+          <div class="timeline-item"><strong>ADK가 Tool을 선택</strong> — deterministic fake model이 exact Tool ID와 인자를 냅니다.</div>
+          <div class="timeline-item"><strong>fresh reauthorization</strong> — 저장된 Scope와 현재 Registry/selector snapshot을 다시 대조합니다.</div>
+          <div class="timeline-item"><strong>실제 Strategy 실행</strong> — summary·contribution·audit production Strategy가 frozen source를 1회 읽습니다.</div>
+          <div class="timeline-item"><strong>독립 result oracle 대조</strong> — Strategy를 호출하지 않고 만든 trusted bytes와 실제 결과를 byte-exact 비교합니다.</div>
+          <div class="timeline-item"><strong>materialize + publish</strong> — poc.2 lineage로 두 경로만 재바인딩하고 one-slot sink에 정확히 1회 공개합니다.</div>
+        </div>
+      </section>
+
+      <section id="results">
+        <p class="section-kicker">06 · observed results</p>
+        <h2>실제 frozen 데이터에서 나온 결과</h2>
+        <p class="muted">아래 수치는 P0-047 frozen capture에서 CA/Amazon row를 동일 조건으로 집계한 값입니다.</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>주 시작일</th><th class="num">row</th><th class="num">impressions</th><th class="num">clicks</th><th>상태</th></tr></thead>
+            <tbody>
+              <tr><td>2026-05-04</td><td class="num">8</td><td class="num">642,000</td><td class="num">7,500</td><td>OBSERVED</td></tr>
+              <tr><td>2026-05-11</td><td class="num">3</td><td class="num">240,000</td><td class="num">2,700</td><td>OBSERVED</td></tr>
+              <tr><td>2026-05-25</td><td class="num">8</td><td class="num">666,000</td><td class="num">7,500</td><td>OBSERVED</td></tr>
+              <tr><td>2026-06-29</td><td class="num">2</td><td class="num">169,000</td><td class="num">1,650</td><td>OBSERVED</td></tr>
+              <tr><td>2026-07-06</td><td class="num">2</td><td class="num">176,000</td><td class="num">1,800</td><td>OBSERVED</td></tr>
+              <tr><td>2026-07-13</td><td class="num">2</td><td class="num">183,000</td><td class="num">1,950</td><td>OBSERVED</td></tr>
+              <tr><td>2026-07-20</td><td class="num">2</td><td class="num">190,000</td><td class="num">2,100</td><td>OBSERVED</td></tr>
+              <tr><th>합계</th><th class="num">27</th><th class="num">2,266,000</th><th class="num">25,200</th><th>7 observed weeks</th></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top:1.5rem">가장 큰 impression 감소 driver</h3>
+        <div class="callout">
+          <span class="num">↓</span>
+          <div><strong>QNED · Sponsored Search · ProductDetail · QNED</strong><br><code>158,000 → 0</code>, delta <code>-158,000</code>. 전체 impression 감소 <code>-402,000</code> 중 가장 큰 절대 변화입니다.</div>
+        </div>
+      </section>
+
+      <section id="guardrails">
+        <p class="section-kicker">07 · trust boundary</p>
+        <h2>무엇이 실제였고, 무엇은 의도적으로 가짜였나</h2>
+        <div class="boundary-grid">
+          <article class="boundary real">
+            <h3>실제로 실행한 것</h3>
+            <ul>
+              <li>fresh disposable PostgreSQL 16 Registry</li>
+              <li>Registry ACTIVE graph read</li>
+              <li>Object Type·instance resolver</li>
+              <li>CA/Amazon clarification과 Scope 봉인</li>
+              <li>실제 P0-053 Function integration</li>
+              <li>실제 summary·contribution·audit Strategy</li>
+              <li>source read 1, publish 1, cleanup retained 0</li>
+            </ul>
+          </article>
+          <article class="boundary not-live">
+            <h3>의도적으로 실행하지 않은 것</h3>
+            <ul>
+              <li>live LLM 호출: 0</li>
+              <li>resolver의 live BigQuery job: 0</li>
+              <li>production endpoint 접근: 0</li>
+              <li>production mutation: 0</li>
+              <li>fallback route: 0</li>
+              <li>운영 master/crosswalk 승인 주장: 하지 않음</li>
+            </ul>
+          </article>
+        </div>
+        <div class="cards">
+          <article class="card"><span class="tag red">DENY</span><h3>권한 없는 role</h3><p>Tool surface 자체가 0개이며 source read와 publish도 0입니다.</p></article>
+          <article class="card"><span class="tag red">DENY</span><h3>DRAFT context 변조</h3><p>fresh snapshot과 Scope가 다르면 Function 실행 전에 거부합니다.</p></article>
+          <article class="card"><span class="tag green">ALLOW</span><h3>신뢰된 current Scope</h3><p>성공한 세 Function 각각 reauth 1, source read 1, publish 1입니다.</p></article>
+        </div>
+      </section>
+
+      <section id="sources">
+        <p class="section-kicker">08 · canonical sources</p>
+        <h2>도식의 근거</h2>
+        <p>이 문서는 다음 실제 코드·정본 artifact를 사람이 읽기 쉬운 형태로 재구성했습니다.</p>
+        <ul>
+          <li><a href="../../tests/support/poc_harness/tool_e2e_gate.py">P0-062 physical Tool E2E gate</a></li>
+          <li><a href="../../postgres_ontology_provider/bounded_resolver.py">bounded Object resolver</a></li>
+          <li><a href="../../postgres_ontology_provider/poc2_function_integration.py">P0-053 Function integration</a></li>
+          <li><a href="../../tests/support/poc2_integration_fixture.py">frozen execution fixture와 독립 result authority</a></li>
+          <li><a href="V03_SYNTHETIC_POC2_OBJECT_DISCOVERY_BINDING.json">Object discovery binding</a></li>
+          <li><a href="V03_SYNTHETIC_POC_FIELD_BINDING.json">frozen Object·Property·Link binding</a></li>
+          <li><a href="../todo/tasks.json">P0-062 완료 증거</a></li>
+        </ul>
+        <div class="note"><strong>범위:</strong> POC fixture에서 Object resolution과 read-only Function 연결을 증명한 문서입니다. Production source readiness와 Market/Retailer governance 승인을 의미하지 않습니다.</div>
+      </section>
+    </main>
+  </div>
+
+  <footer>P0-090 · P0-062 query → Object resolution → Function execution visual explanation</footer>
+</body>
+</html>
